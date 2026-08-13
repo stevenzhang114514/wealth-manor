@@ -1,0 +1,4 @@
+# 统一行尾：仓库内为 LF，Windows 工作区自动转换（消除 CRLF 警告与跨平台差异）
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
