@@ -1,0 +1,17 @@
+{
+  "name": "wealth-manor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "财富庄园 · Wealth Manor —— 工行APP游戏化智能理财与个人财产管理平台（半成品原型）",
+  "scripts": {
+    "setup": "npm --prefix server install && npm --prefix web install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:web": "npm --prefix web run dev",
+    "start:server": "npm --prefix server start",
+    "build:web": "npm --prefix web run build",
+    "test": "npm --prefix server test",
+    "lint": "npm --prefix server run lint && npm --prefix web run lint",
+    "format": "npm --prefix server run format && npm --prefix web run format",
+    "capture": "node scripts/capture-demo.mjs"
+  }
+}

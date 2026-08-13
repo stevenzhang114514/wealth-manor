@@ -1,0 +1,28 @@
+{
+  "name": "wealth-manor-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "财富庄园 · Wealth Manor —— 游戏化智能理财平台后端（Mock 环境）",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "node --test",
+    "lint": "eslint src",
+    "format": "prettier --write src"
+  },
+  "engines": {
+    "node": ">=18.18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "eslint": "^9.30.0",
+    "eslint-config-prettier": "^10.1.0",
+    "prettier": "^3.5.0"
+  }
+}
