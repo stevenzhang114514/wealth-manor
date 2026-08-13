@@ -11,7 +11,9 @@ import { useRoute } from 'vue-router'
 import PhoneFrame from './components/PhoneFrame.vue'
 
 const route = useRoute()
-const isEmbed = new URLSearchParams(location.search).get('embed') === '1'
+// 整屏模式：?embed=1 显式开启，或手机浏览器自动进入（隐藏桌面侧栏，铺满屏幕）
+const isMobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)
+const isEmbed = new URLSearchParams(location.search).get('embed') === '1' || isMobile
 
 const MODULES = {
   '/manor': {
