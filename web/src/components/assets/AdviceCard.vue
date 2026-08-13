@@ -14,7 +14,10 @@ const emit = defineEmits(['optimize'])
 const onOptimize = (advice) => {
   const plan = advice?.optimizePlan?.[0]
   if (plan) {
-    toast(`已生成优化方案（演示）：${plan.action}「${plan.from}」${formatMoney(plan.amount)} 至「${plan.to}」`, 'success')
+    toast(
+      `已生成优化方案（演示）：${plan.action}「${plan.from}」${formatMoney(plan.amount)} 至「${plan.to}」`,
+      'success',
+    )
   }
   emit('optimize')
 }
@@ -33,7 +36,8 @@ const onOptimize = (advice) => {
 
     <div v-if="advice.optimizePlan?.length" class="opt-row">
       <span v-for="(p, i) in advice.optimizePlan" :key="i" class="opt-chip">
-        {{ p.action }}：{{ p.from }}→{{ p.to }} {{ p.amount ? formatMoney(p.amount) : '定投' + formatMoney(p.monthly) + '/月' }}
+        {{ p.action }}：{{ p.from }}→{{ p.to }}
+        {{ p.amount ? formatMoney(p.amount) : '定投' + formatMoney(p.monthly) + '/月' }}
       </span>
     </div>
 

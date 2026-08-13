@@ -13,6 +13,8 @@ import { computed } from 'vue'
 const props = defineProps({
   plants: { type: Array, default: () => [] },
   weather: { type: Object, default: null },
+  /** 已装备的商城装饰摆件（emoji + slot 坐标） */
+  decorations: { type: Array, default: () => [] },
 })
 const emit = defineEmits(['select'])
 
@@ -91,16 +93,38 @@ const raindrops = Array.from({ length: 16 }, (_, i) => ({
         <circle cx="304" cy="58" r="22" fill="#ffd54f" />
         <g class="sun-rays">
           <line
-v-for="i in 8" :key="i" x1="304" :y1="58 - 34" x2="304" :y2="58 - 42"
-            stroke="#ffd54f" stroke-width="3" stroke-linecap="round"
-            :transform="`rotate(${i * 45} 304 58)`" />
+            v-for="i in 8"
+            :key="i"
+            x1="304"
+            :y1="58 - 34"
+            x2="304"
+            :y2="58 - 42"
+            stroke="#ffd54f"
+            stroke-width="3"
+            stroke-linecap="round"
+            :transform="`rotate(${i * 45} 304 58)`"
+          />
         </g>
       </g>
 
       <!-- 彩虹 -->
       <g v-if="weather?.code === 'rainbow'" class="rainbow">
-        <path d="M 208 88 A 96 96 0 0 1 400 88" fill="none" stroke="url(#rainbowGrad)" stroke-width="7" stroke-linecap="round" opacity="0.85" />
-        <path d="M 220 88 A 84 84 0 0 1 388 88" fill="none" stroke="#ffe082" stroke-width="3" stroke-linecap="round" opacity="0.7" />
+        <path
+          d="M 208 88 A 96 96 0 0 1 400 88"
+          fill="none"
+          stroke="url(#rainbowGrad)"
+          stroke-width="7"
+          stroke-linecap="round"
+          opacity="0.85"
+        />
+        <path
+          d="M 220 88 A 84 84 0 0 1 388 88"
+          fill="none"
+          stroke="#ffe082"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity="0.7"
+        />
       </g>
 
       <!-- 云 -->
@@ -117,25 +141,63 @@ v-for="i in 8" :key="i" x1="304" :y1="58 - 34" x2="304" :y2="58 - 42"
       <!-- 雨滴 -->
       <g v-if="isRainy" class="rain-layer">
         <line
-v-for="(d, i) in raindrops" :key="i" :x1="d.x" :y1="-20" :x2="d.x - 3" :y2="-20 + d.len"
-          stroke="#7fa3c7" stroke-width="2" stroke-linecap="round" class="raindrop"
-          :style="{ animationDelay: d.delay + 's' }" />
+          v-for="(d, i) in raindrops"
+          :key="i"
+          :x1="d.x"
+          :y1="-20"
+          :x2="d.x - 3"
+          :y2="-20 + d.len"
+          stroke="#7fa3c7"
+          stroke-width="2"
+          stroke-linecap="round"
+          class="raindrop"
+          :style="{ animationDelay: d.delay + 's' }"
+        />
       </g>
 
       <!-- 温室（长期投资） -->
       <g class="greenhouse">
-        <rect x="138" y="168" width="72" height="52" rx="6" fill="#dfeef2" stroke="#9cc0c9" stroke-width="2" />
-        <path d="M 138 190 A 36 28 0 0 1 210 190 Z" fill="#f2fbff" stroke="#9cc0c9" stroke-width="2" />
+        <rect
+          x="138"
+          y="168"
+          width="72"
+          height="52"
+          rx="6"
+          fill="#dfeef2"
+          stroke="#9cc0c9"
+          stroke-width="2"
+        />
+        <path
+          d="M 138 190 A 36 28 0 0 1 210 190 Z"
+          fill="#f2fbff"
+          stroke="#9cc0c9"
+          stroke-width="2"
+        />
         <line x1="174" y1="166" x2="174" y2="188" stroke="#9cc0c9" stroke-width="1.5" />
         <line x1="150" y1="178" x2="150" y2="188" stroke="#9cc0c9" stroke-width="1.5" />
         <line x1="198" y1="178" x2="198" y2="188" stroke="#9cc0c9" stroke-width="1.5" />
         <text
-v-if="greenhousePlant" x="174" y="164" text-anchor="middle"
-          :font-size="STAGE_SIZE[greenhousePlant.stage] || 26" class="plant-emoji"
-          @click="emit('select', greenhousePlant)">{{ greenhousePlant.emoji }}</text>
+          v-if="greenhousePlant"
+          x="174"
+          y="164"
+          text-anchor="middle"
+          :font-size="STAGE_SIZE[greenhousePlant.stage] || 26"
+          class="plant-emoji"
+          @click="emit('select', greenhousePlant)"
+        >
+          {{ greenhousePlant.emoji }}
+        </text>
         <text
-v-if="greenhousePlant" x="174" y="228" text-anchor="middle" font-size="9" fill="#5d7a85"
-          class="plot-name">{{ greenhousePlant.speciesName }}</text>
+          v-if="greenhousePlant"
+          x="174"
+          y="228"
+          text-anchor="middle"
+          font-size="9"
+          fill="#5d7a85"
+          class="plot-name"
+        >
+          {{ greenhousePlant.speciesName }}
+        </text>
       </g>
 
       <!-- 后景草地 -->
@@ -144,29 +206,74 @@ v-if="greenhousePlant" x="174" y="228" text-anchor="middle" font-size="9" fill="
       <!-- 地块 -->
       <g v-for="p in plots" :key="p.x" class="plot" @click="p.plant && emit('select', p.plant)">
         <rect
-:x="p.x" :y="p.y" :width="p.w" :height="p.h" rx="10"
-          :fill="p.type === 'garden' ? '#c9a66b' : '#b68f56'" stroke="#a5824a" stroke-width="2" />
+          :x="p.x"
+          :y="p.y"
+          :width="p.w"
+          :height="p.h"
+          rx="10"
+          :fill="p.type === 'garden' ? '#c9a66b' : '#b68f56'"
+          stroke="#a5824a"
+          stroke-width="2"
+        />
         <text
-:x="p.x + p.w / 2" :y="p.y - 5" text-anchor="middle" font-size="9" fill="#7d6a45"
-          class="plot-label">{{ p.label }}</text>
+          :x="p.x + p.w / 2"
+          :y="p.y - 5"
+          text-anchor="middle"
+          font-size="9"
+          fill="#7d6a45"
+          class="plot-label"
+        >
+          {{ p.label }}
+        </text>
         <template v-if="p.plant">
           <text
-:x="p.x + p.w / 2" :y="p.y + 20" text-anchor="middle"
+            :x="p.x + p.w / 2"
+            :y="p.y + 20"
+            text-anchor="middle"
             :font-size="STAGE_SIZE[p.plant.stage] || 26"
-            :opacity="p.plant.stage === 'wilted' ? 0.75 : 1" class="plant-emoji">
+            :opacity="p.plant.stage === 'wilted' ? 0.75 : 1"
+            class="plant-emoji"
+          >
             {{ p.plant.emoji }}
           </text>
           <text
-:x="p.x + p.w / 2" :y="p.y + p.h - 8" text-anchor="middle" font-size="9" fill="#5c4a2b"
-            class="plot-name">{{ p.plant.speciesName }}</text>
+            :x="p.x + p.w / 2"
+            :y="p.y + p.h - 8"
+            text-anchor="middle"
+            font-size="9"
+            fill="#5c4a2b"
+            class="plot-name"
+          >
+            {{ p.plant.speciesName }}
+          </text>
         </template>
-        <text v-else :x="p.x + p.w / 2" :y="p.y + 24" text-anchor="middle" font-size="12" opacity="0.45">
+        <text
+          v-else
+          :x="p.x + p.w / 2"
+          :y="p.y + 24"
+          text-anchor="middle"
+          font-size="12"
+          opacity="0.45"
+        >
           +
         </text>
       </g>
 
       <!-- 前景草地 -->
       <rect x="0" y="308" width="375" height="48" fill="#a8c686" />
+
+      <!-- 商城装饰摆件（装备后实景渲染） -->
+      <g v-for="(d, i) in decorations" :key="d.id">
+        <text
+          :x="d.slot.x"
+          :y="d.slot.y"
+          text-anchor="middle"
+          font-size="22"
+          :class="'deco deco-' + i"
+        >
+          {{ d.emoji }}
+        </text>
+      </g>
     </svg>
   </div>
 </template>
@@ -257,9 +364,45 @@ v-if="greenhousePlant" x="174" y="228" text-anchor="middle" font-size="9" fill="
 /* 可点击植物 */
 .plant-emoji {
   cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: sway 3.2s ease-in-out infinite;
+}
+
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-2.2deg);
+  }
+  50% {
+    transform: rotate(2.2deg);
+  }
 }
 
 .plot {
   cursor: pointer;
+}
+
+/* 装饰摆件轻微浮动 */
+.deco {
+  animation: decoFloat 3.6s ease-in-out infinite;
+}
+
+.deco-1 {
+  animation-delay: -1.4s;
+}
+
+.deco-2 {
+  animation-delay: -2.6s;
+}
+
+@keyframes decoFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 </style>

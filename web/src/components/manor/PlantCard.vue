@@ -8,7 +8,7 @@ import { toast } from '../../utils/toast.js'
 defineProps({
   plant: { type: Object, default: null },
 })
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'harvest'])
 
 const showDetail = (p) => {
   toast(`「${p.linkedProduct.name}」持仓详情（演示版未接入交易系统）`)
@@ -31,7 +31,9 @@ const showDetail = (p) => {
                 {{ plant.stageLabel }}
               </span>
             </div>
-            <div class="sheet-sub">{{ plant.plot }} · {{ plant.volatility }}波动 · {{ plant.matureDays }}天周期</div>
+            <div class="sheet-sub">
+              {{ plant.plot }} · {{ plant.volatility }}波动 · {{ plant.matureDays }}天周期
+            </div>
           </div>
           <button class="sheet-close" @click="emit('close')">✕</button>
         </div>
@@ -43,10 +45,20 @@ const showDetail = (p) => {
             <span>{{ Math.round(plant.progress * 100) }}%</span>
           </div>
           <div class="progress-track">
-            <div class="progress-fill" :style="{ width: plant.progress * 100 + '%', background: plant.speciesColor }"></div>
+            <div
+              class="progress-fill"
+              :style="{ width: plant.progress * 100 + '%', background: plant.speciesColor }"
+            ></div>
           </div>
-          <div v-if="plant.stage === 'mature'" class="progress-tip">🌾 已成熟，可收获！产品到期赎回即触发丰收奖励</div>
-          <div v-else-if="plant.stage === 'wilted'" class="progress-tip warn-text">🥀 提前赎回导致枯萎——坚持持有，静待花开</div>
+          <div v-if="plant.stage === 'archived'" class="progress-tip">
+            🪵 已收获归档：资金已回笼，木桩化作庄园装饰
+          </div>
+          <div v-else-if="plant.stage === 'mature'" class="progress-tip">
+            🌾 已成熟，可收获！产品到期赎回即触发丰收奖励
+          </div>
+          <div v-else-if="plant.stage === 'wilted'" class="progress-tip warn-text">
+            🥀 提前赎回导致枯萎——坚持持有，静待花开
+          </div>
           <div v-else class="progress-tip">预计 {{ plant.matureAt }} 成熟 · 到期赎回享丰收奖励</div>
         </div>
 
@@ -58,9 +70,23 @@ const showDetail = (p) => {
           </div>
           <div class="product-meta">
             <span>代码 {{ plant.linkedProduct.code }}</span>
-            <span>持有收益率 <b :class="plant.linkedProduct.yieldRate >= 0 ? 'up' : 'down'">+{{ plant.linkedProduct.yieldRate }}%</b></span>
+            <span
+              >持有收益率
+              <b :class="plant.linkedProduct.yieldRate >= 0 ? 'up' : 'down'"
+                >+{{ plant.linkedProduct.yieldRate }}%</b
+              ></span
+            >
           </div>
-          <button class="wm-btn ghost wm-btn-block" @click="showDetail(plant)">查看持仓详情</button>
+          <button
+            v-if="plant.stage === 'mature'"
+            class="wm-btn harvest-btn wm-btn-block"
+            @click="emit('harvest', plant)"
+          >
+            🌾 收获丰收（产品到期赎回）
+          </button>
+          <button v-else class="wm-btn ghost wm-btn-block" @click="showDetail(plant)">
+            查看持仓详情
+          </button>
         </div>
       </div>
     </div>
@@ -212,5 +238,9 @@ const showDetail = (p) => {
   width: 100%;
   font-size: 12px;
   padding: 9px;
+}
+
+.harvest-btn {
+  background: linear-gradient(135deg, var(--gold), #e8a02e);
 }
 </style>

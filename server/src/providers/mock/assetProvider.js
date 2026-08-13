@@ -13,21 +13,53 @@
 import { ACCOUNTS, LIABILITIES, PORTFOLIO, CASHFLOW } from '../../data/assets.js'
 import { createSeededRandom } from '../../utils/random.js'
 
+/** 账户明细（Mock 内存态：导入的账户实时追加，重启重置） */
+const accounts = [...ACCOUNTS]
+
+/**
+ * 资产总览：基础分类 + 导入账户按分类汇总实时重算
+ * 注：todayChange/todayChangePct 保持静态（模拟行情），导入不改变当日盈亏与庄园天气
+ */
 export function getPortfolio() {
-  const total = PORTFOLIO.totalAssets
-  const categories = PORTFOLIO.categories.map((c) => ({
-    ...c,
-    ratio: +(c.amount / total).toFixed(4),
-  }))
+  const importedByCat = new Map()
+  let importedTotal = 0
+  for (const a of accounts) {
+    if (!a.imported) continue
+    importedByCat.set(a.category, (importedByCat.get(a.category) ?? 0) + a.balance)
+    importedTotal += a.balance
+  }
+  const total = PORTFOLIO.totalAssets + importedTotal
+  const categories = PORTFOLIO.categories.map((c) => {
+    const amount = c.amount + (importedByCat.get(c.category) ?? 0)
+    return { ...c, amount, ratio: +(amount / total).toFixed(4) }
+  })
   return {
     ...PORTFOLIO,
+    totalAssets: total,
+    netWorth: PORTFOLIO.netWorth + importedTotal,
     categories,
     liabilities: LIABILITIES,
   }
 }
 
 export function getAccounts() {
-  return ACCOUNTS
+  return accounts.map((a) => ({ ...a }))
+}
+
+/** 资产导入：追加账户（渠道：自动同步/扫码导入/OCR识别/手动录入） */
+export function importAccount({ channel, name, category, amount, institution = '外部渠道' }) {
+  const account = {
+    id: `a_imp_${Date.now()}`,
+    name,
+    category,
+    institution,
+    balance: amount,
+    currency: 'CNY',
+    syncType: channel,
+    imported: true,
+  }
+  accounts.push(account)
+  return { ...account }
 }
 
 /**

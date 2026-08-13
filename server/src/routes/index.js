@@ -12,6 +12,9 @@ import manorRouter from './manor.js'
 import tasksRouter from './tasks.js'
 import quizRouter from './quiz.js'
 import aiRouter from './ai.js'
+import shopRouter from './shop.js'
+import socialRouter from './social.js'
+import goalsRouter from './goals.js'
 
 const router = Router()
 
@@ -20,5 +23,8 @@ router.use('/manor', manorRouter)
 router.use('/manor', tasksRouter)
 router.use('/quiz', quizRouter)
 router.use('/ai', aiRouter)
+router.use('/shop', shopRouter)
+router.use('/social', socialRouter)
+router.use('/goals', goalsRouter)
 
 export default router

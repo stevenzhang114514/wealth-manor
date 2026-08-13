@@ -6,6 +6,7 @@
  */
 import { getProvider } from '../providers/index.js'
 import { scorePortfolio } from './assetService.js'
+import { CHAT_RULES, CHAT_DEFAULT_REPLY } from '../data/chatRules.js'
 
 const provider = await getProvider('asset')
 
@@ -83,4 +84,21 @@ export async function getPortfolioAdvice() {
     optimizePlan,
     disclaimer: '以上建议由规则引擎生成，仅供参考，不构成投资建议。市场有风险，投资需谨慎。',
   }
+}
+
+/**
+ * AI 助手问答（纯函数）：关键词规则匹配，按顺序取第一条命中
+ * 生产环境：大模型生成回答 + 本规则引擎做合规兜底（见 ARCHITECTURE.md）
+ */
+export function matchChatRule(message, rules = CHAT_RULES) {
+  const text = String(message ?? '').trim()
+  const hit = text && rules.find((r) => r.keywords.some((k) => text.includes(k)))
+  if (hit) {
+    return { id: hit.id, reply: hit.reply, chips: hit.chips }
+  }
+  return { id: 'default', reply: CHAT_DEFAULT_REPLY.reply, chips: CHAT_DEFAULT_REPLY.chips }
+}
+
+export async function chat(message) {
+  return matchChatRule(message)
 }

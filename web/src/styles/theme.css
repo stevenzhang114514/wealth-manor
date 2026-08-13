@@ -160,7 +160,9 @@ body {
 /* 路由切换过渡 */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .fade-slide-enter-from {
@@ -205,7 +207,9 @@ body {
   background: var(--icbc-red);
   color: #fff;
   cursor: pointer;
-  transition: transform 0.12s ease, opacity 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    opacity 0.12s ease;
 }
 
 .wm-btn:active {
@@ -259,7 +263,9 @@ body {
   z-index: 9999;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
   max-width: 82vw;
   text-align: center;
 }
@@ -275,6 +281,33 @@ body {
 
 .wm-toast[data-type='error'] {
   background: rgba(190, 40, 40, 0.94);
+}
+
+/* ---------- 金币飞入动画（奖励入账反馈） ---------- */
+.coin-fly {
+  position: fixed;
+  left: 50%;
+  bottom: 100px;
+  z-index: 999;
+  font-size: 14px;
+  font-weight: 800;
+  color: #b07d1a;
+  pointer-events: none;
+  animation: coinFloat 1.1s ease-out forwards;
+}
+
+@keyframes coinFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 16px) scale(0.8);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -78px) scale(1.08);
+  }
 }
 
 /* ---------- 数值颜色 ---------- */

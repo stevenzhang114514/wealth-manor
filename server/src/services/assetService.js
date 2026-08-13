@@ -3,8 +3,15 @@
  * 只依赖 provider 注册表获取数据，不关心数据来源（Mock / 真实工行接口）。
  */
 import { getProvider } from '../providers/index.js'
+import { ERROR_CODES } from '../utils/response.js'
 
 const provider = await getProvider('asset')
+
+/** 四通道导入渠道（与《设计方案》3.1 导入体系一致） */
+export const IMPORT_CHANNELS = ['自动同步', '扫码导入', 'OCR识别', '手动录入']
+
+/** 看板支持的资产大类 */
+export const KNOWN_CATEGORIES = ['现金及存款', '权益类', '基金理财', '不动产', '保险', '其他']
 
 /** 资产总览：当前时点快照 + 大类占比 */
 export async function getOverview() {
@@ -79,4 +86,34 @@ export async function getHealthScore() {
 
 function clamp(v, min, max) {
   return Math.min(max, Math.max(min, v))
+}
+
+/**
+ * 资产导入（四通道统一入口）：
+ * 校验渠道/名称/类别/金额 → 追加账户 → 返回重算后的资产总览
+ */
+export async function importAsset(payload) {
+  const { channel, name, category, amount, institution } = payload ?? {}
+  if (!IMPORT_CHANNELS.includes(channel)) {
+    return { error: { code: ERROR_CODES.BAD_REQUEST, message: `channel 仅支持：${IMPORT_CHANNELS.join('/')}` } }
+  }
+  if (!name || !String(name).trim()) {
+    return { error: { code: ERROR_CODES.BAD_REQUEST, message: '资产名称不能为空' } }
+  }
+  if (!KNOWN_CATEGORIES.includes(category)) {
+    return { error: { code: ERROR_CODES.BAD_REQUEST, message: `类别仅支持：${KNOWN_CATEGORIES.join('/')}` } }
+  }
+  const num = Number(amount)
+  if (!Number.isFinite(num) || num <= 0 || num > 100000000) {
+    return { error: { code: ERROR_CODES.BAD_REQUEST, message: '金额需为 0~1亿元 之间的正数' } }
+  }
+  const account = provider.importAccount({
+    channel,
+    name: String(name).trim(),
+    category,
+    amount: Math.round(num),
+    institution,
+  })
+  const overview = provider.getPortfolio()
+  return { data: { account, overview } }
 }

@@ -1,9 +1,12 @@
 <script setup>
 /**
  * 手机框演示壳：375×812 模拟工行APP内嵌模块
- * 内含状态栏 + 内容滚动区 + 底部 Tab
+ * 内含状态栏 + 内容滚动区 + 底部 Tab（路由 meta.hideTab 时隐藏，如新手引导）
  */
+import { useRoute } from 'vue-router'
 import TabBar from './TabBar.vue'
+
+const route = useRoute()
 </script>
 
 <template>
@@ -22,7 +25,7 @@ import TabBar from './TabBar.vue'
           </transition>
         </router-view>
       </div>
-      <TabBar />
+      <TabBar v-if="!route.meta.hideTab" />
     </div>
   </div>
 </template>

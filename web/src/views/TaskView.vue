@@ -5,7 +5,7 @@
 import { onMounted, ref } from 'vue'
 import { getTaskList, claimTask } from '../api/tasks.js'
 import { useManorStore } from '../stores/manor.js'
-import { toast } from '../utils/toast.js'
+import { toast, flyCoin } from '../utils/toast.js'
 
 const manor = useManorStore()
 const groups = ref([])
@@ -31,6 +31,7 @@ const onClaim = async (task) => {
     task.status = 'claimed'
     task.claimed = true
     manor.setState(res.manor)
+    flyCoin(`+${res.rewards.coins ?? 0} 🪙 +${res.rewards.exp ?? 0} ⭐`)
     toast(`领取成功：${rewardText(res.rewards)} 已入账`, 'success')
   } catch {
     // 错误提示由 http 拦截器统一弹出

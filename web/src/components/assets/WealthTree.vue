@@ -16,7 +16,9 @@ const MAIN_BRANCHES = ['现金及存款', '权益类', '基金理财', '不动�
 
 const branches = computed(() => {
   const cats = props.overview?.categories ?? []
-  const selected = MAIN_BRANCHES.map((name) => cats.find((c) => c.category === name)).filter(Boolean)
+  const selected = MAIN_BRANCHES.map((name) => cats.find((c) => c.category === name)).filter(
+    Boolean,
+  )
   const max = Math.max(...selected.map((c) => c.amount), 1)
   const angles = [150, 120, 60, 30]
   const trunkTop = { x: 150, y: 96 }
@@ -28,7 +30,10 @@ const branches = computed(() => {
       x: trunkTop.x + Math.cos(rad) * len,
       y: trunkTop.y - Math.sin(rad) * len,
     }
-    const label = { x: trunkTop.x + Math.cos(rad) * (len + 20), y: trunkTop.y - Math.sin(rad) * (len + 20) }
+    const label = {
+      x: trunkTop.x + Math.cos(rad) * (len + 20),
+      y: trunkTop.y - Math.sin(rad) * (len + 20),
+    }
     return { ...c, ratio, end, label, width: 4.5 + ratio * 9 }
   })
 })
@@ -58,8 +63,13 @@ const trendPct = computed(() => {
       <!-- 树冠 -->
       <circle cx="150" cy="62" r="58" fill="rgba(126,180,93,0.14)" />
       <circle
-v-for="(l, i) in leaves" :key="i" :cx="l.x" :cy="l.y" :r="l.r"
-        :fill="i % 3 === 0 ? '#4e8c4e' : i % 3 === 1 ? '#7ba05b' : '#9dc07a'" />
+        v-for="(l, i) in leaves"
+        :key="i"
+        :cx="l.x"
+        :cy="l.y"
+        :r="l.r"
+        :fill="i % 3 === 0 ? '#4e8c4e' : i % 3 === 1 ? '#7ba05b' : '#9dc07a'"
+      />
       <text x="150" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#4e8c4e">
         树冠 · 净资产 {{ formatWan(overview?.netWorth ?? 0) }}
       </text>
@@ -67,8 +77,14 @@ v-for="(l, i) in leaves" :key="i" :cx="l.x" :cy="l.y" :r="l.r"
       <!-- 分支 -->
       <g v-for="b in branches" :key="b.category">
         <line
-x1="150" y1="96" :x2="b.end.x" :y2="b.end.y" :stroke="b.color"
-          :stroke-width="b.width" stroke-linecap="round" />
+          x1="150"
+          y1="96"
+          :x2="b.end.x"
+          :y2="b.end.y"
+          :stroke="b.color"
+          :stroke-width="b.width"
+          stroke-linecap="round"
+        />
         <circle :cx="b.end.x" :cy="b.end.y" :r="7 + b.ratio * 7" :fill="b.color" opacity="0.85" />
         <text :x="b.label.x" :y="b.label.y" text-anchor="middle" font-size="9" fill="#5d6672">
           {{ b.category }} {{ Math.round(b.ratio * 100) }}%
@@ -77,8 +93,11 @@ x1="150" y1="96" :x2="b.end.x" :y2="b.end.y" :stroke="b.color"
 
       <!-- 树干 -->
       <path
-d="M 138 96 C 138 140 142 168 140 196 L 160 196 C 158 168 162 140 162 96 Z"
-        fill="#a5824a" stroke="#8c6c3c" stroke-width="1.5" />
+        d="M 138 96 C 138 140 142 168 140 196 L 160 196 C 158 168 162 140 162 96 Z"
+        fill="#a5824a"
+        stroke="#8c6c3c"
+        stroke-width="1.5"
+      />
       <text x="150" y="222" text-anchor="middle" font-size="10" font-weight="700" fill="#7d6a45">
         树干 · 总资产 {{ formatWan(overview?.totalAssets ?? 0) }}
       </text>

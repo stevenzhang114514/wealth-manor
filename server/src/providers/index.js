@@ -18,6 +18,9 @@ const PROVIDERS = {
     manor: () => import('./mock/manorProvider.js'),
     task: () => import('./mock/taskProvider.js'),
     quiz: () => import('./mock/quizProvider.js'),
+    shop: () => import('./mock/shopProvider.js'),
+    social: () => import('./mock/socialProvider.js'),
+    goal: () => import('./mock/goalProvider.js'),
   },
   // icbc: {
   //   asset: () => import('./icbc/assetProvider.js'),

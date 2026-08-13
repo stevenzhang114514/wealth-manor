@@ -6,3 +6,5 @@ export const getAssetOverview = () => http.get('/assets/overview')
 export const getAssetTrend = (days = 30) => http.get('/assets/trend', { params: { days } })
 
 export const getHealthScore = () => http.get('/assets/health-score')
+
+export const importAsset = (payload) => http.post('/assets/import', payload)

@@ -35,11 +35,14 @@ server/src/data/         数据驱动配置：植物物种/任务定义/题库/�
 5. `web/src/api/` 新建接口封装（与路由一一对应），`web/src/views/` 新建页面，`router/index.js` + `TabBar.vue` 注册
 6. **先更新 `docs/API_SPEC.md`，再实现代码**
 
-### 2.2 新增植物/任务/题目（纯数据扩展）
+### 2.2 新增植物/任务/题目/商品/问答（纯数据扩展）
 
 - 植物：`server/src/data/plants.js` 的 `SPECIES` 追加一条（名称/表情/成熟周期/波动/颜色）
 - 任务：`server/src/data/tasks.js` 的 `TASK_DEFINITIONS` 追加一条 + `MOCK_PROGRESS` 给初始进度
 - 题目：`server/src/data/quizBank.js` 追加一条（含解析）
+- 商品：`server/src/data/shopItems.js` 追加一条（装饰带 `slot` 场景坐标即自动上庄园实景）
+- AI 问答：`server/src/data/chatRules.js` 追加一条（keywords 命中 + reply + chips）
+- 成品阶段新增领域（商城/社交/目标）均遵循同一套 `routes → services → providers → data` 扩展模式，可参照 `services/shopService.js` 复制改造
 
 ### 2.3 Mock → 真实工行服务替换指南
 

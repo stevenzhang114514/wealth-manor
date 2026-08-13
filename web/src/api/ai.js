@@ -2,3 +2,5 @@
 import http from './http.js'
 
 export const getPortfolioAdvice = () => http.get('/ai/portfolio-advice')
+
+export const chatWithAI = (message) => http.post('/ai/chat', { message })

@@ -46,8 +46,15 @@ const addAsset = () => toast('资产导入（演示版）：支持自动同步/�
         </span>
       </div>
       <div v-if="overview" class="hero-sub">
-        总资产 {{ formatMoney(overview.totalAssets) }} · 负债 {{ formatMoney(overview.totalLiabilities) }}
+        总资产 {{ formatMoney(overview.totalAssets) }} · 负债
+        {{ formatMoney(overview.totalLiabilities) }}
       </div>
+    </div>
+
+    <!-- 快捷入口 -->
+    <div class="entry-row">
+      <router-link to="/import" class="entry-item">➕ 资产导入</router-link>
+      <router-link to="/goals" class="entry-item">🎯 目标规划</router-link>
     </div>
 
     <!-- 资产配置 -->
@@ -93,6 +100,30 @@ const addAsset = () => toast('资产导入（演示版）：支持自动同步/�
 <style scoped>
 .asset-view {
   padding-bottom: 14px;
+}
+
+.entry-row {
+  display: flex;
+  gap: 8px;
+  margin: 10px 12px 0;
+}
+
+.entry-item {
+  flex: 1;
+  text-align: center;
+  background: #fff;
+  border-radius: 13px;
+  padding: 10px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(31, 45, 61, 0.05);
+}
+
+.entry-item:active {
+  background: #fdf1f3;
+  color: var(--icbc-red);
 }
 
 .asset-hero {

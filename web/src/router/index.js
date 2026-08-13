@@ -30,6 +30,42 @@ const routes = [
     component: () => import('../views/QuizView.vue'),
     meta: { icon: '🎓', label: '答题' },
   },
+  {
+    path: '/shop',
+    name: 'shop',
+    component: () => import('../views/ShopView.vue'),
+    meta: { icon: '🛍️', label: '商城' },
+  },
+  {
+    path: '/social',
+    name: 'social',
+    component: () => import('../views/SocialView.vue'),
+    meta: { icon: '👥', label: '好友' },
+  },
+  {
+    path: '/chat',
+    name: 'chat',
+    component: () => import('../views/ChatView.vue'),
+    meta: { icon: '🤖', label: 'AI助手' },
+  },
+  {
+    path: '/goals',
+    name: 'goals',
+    component: () => import('../views/GoalsView.vue'),
+    meta: { icon: '🎯', label: '目标' },
+  },
+  {
+    path: '/import',
+    name: 'import',
+    component: () => import('../views/ImportView.vue'),
+    meta: { icon: '➕', label: '导入' },
+  },
+  {
+    path: '/onboarding',
+    name: 'onboarding',
+    component: () => import('../views/OnboardingView.vue'),
+    meta: { icon: '🎮', label: '新手引导', hideTab: true },
+  },
 ]
 
 export default createRouter({

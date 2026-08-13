@@ -1,11 +1,14 @@
 <script setup>
 /**
- * 庄园主页：天气（行情）+ 植物（持仓）+ 等级经验 + 任务/看板快捷入口
+ * 庄园主页：天气（行情）+ 植物（持仓）+ 等级经验 + 快捷入口宫格
+ * 首次进入自动触发新手引导；成熟植物可收获（产品到期赎回映射）
  */
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useManorStore } from '../stores/manor.js'
-import { getManorPlants } from '../api/manor.js'
+import { getManorPlants, harvestPlant } from '../api/manor.js'
+import { getInventory } from '../api/shop.js'
+import { toast, flyCoin } from '../utils/toast.js'
 import WeatherBadge from '../components/manor/WeatherBadge.vue'
 import LevelBar from '../components/manor/LevelBar.vue'
 import ManorScene from '../components/manor/ManorScene.vue'
@@ -14,12 +17,46 @@ import PlantCard from '../components/manor/PlantCard.vue'
 const router = useRouter()
 const manor = useManorStore()
 const plants = ref([])
+const decorations = ref([])
 const selected = ref(null)
 
+const SHORTCUTS = [
+  { icon: '🛍️', label: '庄园商城', to: '/shop' },
+  { icon: '👥', label: '好友排行', to: '/social' },
+  { icon: '🤖', label: 'AI助手', to: '/chat' },
+  { icon: '🎮', label: '新手引导', to: '/onboarding' },
+]
+
 onMounted(async () => {
-  await manor.refresh()
-  plants.value = await getManorPlants()
+  // 首次进入自动触发新手引导（截图/演示可用 ?skip_onboard=1 跳过）
+  const skip = new URLSearchParams(location.search).get('skip_onboard') === '1'
+  if (!skip && !localStorage.getItem('wm-onboarded')) {
+    router.replace('/onboarding')
+    return
+  }
+  await loadAll()
 })
+
+const loadAll = async () => {
+  await manor.refresh()
+  const [ps, inv] = await Promise.all([getManorPlants(), getInventory()])
+  plants.value = ps
+  decorations.value = inv.equippedDecorations
+}
+
+/** 收获成熟植物：奖励入账 + 金币飞入动画 + 植物归档 */
+const onHarvest = async (plant) => {
+  try {
+    const res = await harvestPlant(plant.id)
+    manor.setState(res.manor)
+    selected.value = null
+    await loadAll()
+    flyCoin(`+${res.rewards.coins} 🪙 +${res.rewards.exp} ⭐`)
+    toast(`🌾 丰收！「${res.plant.speciesName}」奖励已入账`, 'success')
+  } catch {
+    // 错误提示由拦截器统一弹出
+  }
+}
 
 const go = (path) => router.push(path)
 </script>
@@ -56,19 +93,24 @@ const go = (path) => router.push(path)
     </div>
 
     <!-- 庄园场景 -->
-    <ManorScene :plants="plants" :weather="manor.weather" @select="selected = $event" />
+    <ManorScene
+      :plants="plants"
+      :weather="manor.weather"
+      :decorations="decorations"
+      @select="selected = $event"
+    />
 
-    <!-- 快捷入口 -->
-    <div class="quick-actions">
-      <button class="wm-btn" @click="go('/tasks')">📋 今日任务</button>
-      <button class="wm-btn ghost" @click="go('/assets')">📊 资产看板</button>
+    <!-- 快捷入口宫格 -->
+    <div class="shortcut-grid">
+      <button v-for="s in SHORTCUTS" :key="s.to" class="shortcut" @click="go(s.to)">
+        <span class="s-icon">{{ s.icon }}</span>
+        <span class="s-label">{{ s.label }}</span>
+      </button>
     </div>
 
-    <div class="scene-tip">
-      💡 点击庄园里的植物，查看它关联的真实理财产品与收益
-    </div>
+    <div class="scene-tip">💡 点击庄园里的植物查看持仓；成熟后点击「收获」领取丰收奖励</div>
 
-    <PlantCard :plant="selected" @close="selected = null" />
+    <PlantCard :plant="selected" @close="selected = null" @harvest="onHarvest" />
   </div>
 </template>
 
@@ -133,14 +175,39 @@ const go = (path) => router.push(path)
   border-radius: 12px;
 }
 
-.quick-actions {
-  display: flex;
-  gap: 10px;
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
   margin: 10px 12px 0;
 }
 
-.quick-actions .wm-btn {
-  flex: 1;
+.shortcut {
+  border: none;
+  background: #fff;
+  border-radius: 13px;
+  padding: 11px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(31, 45, 61, 0.05);
+  transition: transform 0.12s ease;
+}
+
+.shortcut:active {
+  transform: scale(0.94);
+}
+
+.s-icon {
+  font-size: 21px;
+}
+
+.s-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-main);
 }
 
 .scene-tip {

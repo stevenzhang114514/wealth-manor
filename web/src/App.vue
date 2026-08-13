@@ -25,7 +25,12 @@ const MODULES = {
     icon: '📊',
     title: '资产看板',
     desc: '全资产一站式视图：六大类资产配置、30天净资产趋势、健康度评分、AI配置建议与财富树可视化。',
-    apis: ['GET /api/v1/assets/overview', 'GET /api/v1/assets/trend', 'GET /api/v1/assets/health-score', 'GET /api/v1/ai/portfolio-advice'],
+    apis: [
+      'GET /api/v1/assets/overview',
+      'GET /api/v1/assets/trend',
+      'GET /api/v1/assets/health-score',
+      'GET /api/v1/ai/portfolio-advice',
+    ],
     points: ['总净资产 + 当日变动', '资产配置饼图与趋势折线', 'AI建议 → 一键优化（演示）'],
   },
   '/tasks': {
@@ -41,6 +46,53 @@ const MODULES = {
     desc: '每日5题理财知识问答，提交即时判分，答对得金币经验，满分获徽章碎片。',
     apis: ['GET /api/v1/quiz/questions?n=5', 'POST /api/v1/quiz/submit'],
     points: ['5题随机抽取自题库', '即时判分 + 解析展示'],
+  },
+  '/shop': {
+    icon: '🛍️',
+    title: '装扮商城',
+    desc: '装饰/皮肤/称号三栏商品，金币钻石兑换；装备后回到庄园即可看到实景摆件。',
+    apis: ['GET /api/v1/shop/items', 'POST /api/v1/shop/buy', 'POST /api/v1/shop/equip'],
+    points: ['购买扣减余额，余额不足拦截', '装备装饰 → 庄园实景渲染'],
+  },
+  '/social': {
+    icon: '👥',
+    title: '好友与排行',
+    desc: '好友庄园互访浇水（双方各获金币，每日1次）；月度资产配置合理性PK排行榜。',
+    apis: [
+      'GET /api/v1/social/friends',
+      'POST /api/v1/social/visit/:id',
+      'POST /api/v1/social/water/:id',
+      'GET /api/v1/social/leaderboard',
+    ],
+    points: ['访问好友庄园快照', '浇水每日1次 + 金币入账', '本人实时插入排行榜'],
+  },
+  '/chat': {
+    icon: '🤖',
+    title: 'AI助手·小满',
+    desc: '数据驱动的规则引擎问答：定投/风险/房贷/养老/应急/行情，回复带建议追问。',
+    apis: ['POST /api/v1/ai/chat'],
+    points: ['关键词规则匹配（数据驱动）', '建议追问 chips + 打字动画'],
+  },
+  '/goals': {
+    icon: '🎯',
+    title: '目标规划',
+    desc: '购房/教育/养老/应急四大场景测算器，4%年化复利公式，支持保存到我的目标。',
+    apis: ['POST /api/v1/goals/plan', 'GET /api/v1/goals'],
+    points: ['复利公式测算月投入', '保存目标并列表管理'],
+  },
+  '/import': {
+    icon: '➕',
+    title: '资产导入',
+    desc: '四通道导入：工行自动同步、扫码、拍照OCR、手动录入；手动录入真实入账看板重算。',
+    apis: ['POST /api/v1/assets/import'],
+    points: ['四通道流程演示', '导入后净资产实时重算'],
+  },
+  '/onboarding': {
+    icon: '🎮',
+    title: '新手引导',
+    desc: '6步概念引导 + 庄园创建（名称 + 中式/西式/日式风格），首次进入自动展示。',
+    apis: ['POST /api/v1/manor/create'],
+    points: ['首次进入自动触发', '创建庄园写入庄园主档'],
   },
 }
 
@@ -62,7 +114,8 @@ const tabs = Object.entries(MODULES).map(([path, m]) => ({ path, ...m }))
           class="module-link"
           :class="{ active: route.path === t.path }"
         >
-          <span>{{ t.icon }}</span>{{ t.title }}
+          <span>{{ t.icon }}</span
+          >{{ t.title }}
         </router-link>
       </div>
       <div class="side-tags">

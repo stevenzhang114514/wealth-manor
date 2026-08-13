@@ -34,8 +34,8 @@ const STAGE_NAMES = [
 
 const daysAgo = (n) => Date.now() - n * 86400000
 
-/** 演示用户的植物（每株关联一笔真实理财产品，生长阶段由服务层按时间计算） */
-const PLANTS = [
+/** 演示用户的植物（每株关联一笔真实理财产品，生长阶段由服务层按时间计算；收获后标记 archived） */
+const plantsState = [
   {
     id: 'p_1001',
     species: 'sunflower',
@@ -97,8 +97,24 @@ export function getManorState() {
   return { ...manorState, stageName: stage?.name ?? '传说庄园' }
 }
 
+/** 创建/重命名庄园（新手引导） */
+export function createManor({ name, style }) {
+  if (name) manorState.name = name
+  if (style) manorState.style = style
+  return getManorState()
+}
+
 export function getPlants() {
-  return PLANTS.map((p) => ({ ...p, linkedProduct: { ...p.linkedProduct } }))
+  return plantsState.map((p) => ({ ...p, linkedProduct: { ...p.linkedProduct } }))
+}
+
+/** 收获：标记植物归档（业务校验在服务层） */
+export function harvestPlant(plantId) {
+  const plant = plantsState.find((p) => p.id === plantId)
+  if (!plant) return null
+  plant.archived = true
+  plant.harvestedAt = new Date().toISOString()
+  return { ...plant, linkedProduct: { ...plant.linkedProduct } }
 }
 
 /**
@@ -126,5 +142,12 @@ export function applyRewards(rewards = {}) {
   manorState.coins += rewards.coins ?? 0
   manorState.exp += rewards.exp ?? 0
   manorState.diamonds += rewards.diamond ?? 0
+  return getManorState()
+}
+
+/** 消费扣款（余额校验在服务层），返回最新庄园状态 */
+export function applyCost(costs = {}) {
+  manorState.coins -= costs.coins ?? 0
+  manorState.diamonds -= costs.diamonds ?? 0
   return getManorState()
 }

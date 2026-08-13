@@ -111,7 +111,11 @@ const restart = () => {
 
       <div class="qa-footer">
         <button class="wm-btn ghost" :disabled="current === 0" @click="prev">上一题</button>
-        <button class="wm-btn" :disabled="current === total - 1 ? !allAnswered : false" @click="next">
+        <button
+          class="wm-btn"
+          :disabled="current === total - 1 ? !allAnswered : false"
+          @click="next"
+        >
           {{ current === total - 1 ? (submitting ? '判分中…' : '提交答卷') : '下一题' }}
         </button>
       </div>
@@ -120,13 +124,24 @@ const restart = () => {
     <!-- 结果页 -->
     <div v-else-if="phase === 'result' && result" class="quiz-result">
       <div class="result-card">
-        <div class="result-emoji">{{ result.score === result.total ? '🏆' : result.score >= 3 ? '🎉' : '📖' }}</div>
-        <div class="result-score-ring" :style="{ '--pct': (result.score / result.total) * 100 + '%' }">
+        <div class="result-emoji">
+          {{ result.score === result.total ? '🏆' : result.score >= 3 ? '🎉' : '📖' }}
+        </div>
+        <div
+          class="result-score-ring"
+          :style="{ '--pct': (result.score / result.total) * 100 + '%' }"
+        >
           <span class="score-num">{{ result.score }}</span>
           <span class="score-total">/ {{ result.total }}</span>
         </div>
         <div class="result-title">
-          {{ result.score === result.total ? '满分！理财知识达人' : result.score >= 3 ? '不错哦，继续加油' : '温故知新，明天再来' }}
+          {{
+            result.score === result.total
+              ? '满分！理财知识达人'
+              : result.score >= 3
+                ? '不错哦，继续加油'
+                : '温故知新，明天再来'
+          }}
         </div>
         <div class="result-rewards">
           <span class="wm-chip">🪙 +{{ result.rewards.coins }} 金币</span>

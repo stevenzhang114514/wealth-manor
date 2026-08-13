@@ -28,14 +28,17 @@ const OUT_DIR = path.resolve(__dirname, '../../企划书/img')
 mkdirSync(OUT_DIR, { recursive: true })
 
 const ROUTES = [
-  { name: 'manor', path: '/manor' },
+  { name: 'manor', path: '/manor?skip_onboard=1' },
   { name: 'assets', path: '/assets' },
   { name: 'tasks', path: '/tasks' },
   { name: 'quiz', path: '/quiz' },
+  { name: 'shop', path: '/shop' },
+  { name: 'social', path: '/social' },
 ]
 
 for (const r of ROUTES) {
-  const url = `http://localhost:5173${r.path}?embed=1`
+  const sep = r.path.includes('?') ? '&' : '?'
+  const url = `http://localhost:5173${r.path}${sep}embed=1`
   const out = path.join(OUT_DIR, `${r.name}.png`)
   console.log(`截图 ${r.name}: ${url}`)
   execFileSync(

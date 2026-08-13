@@ -95,7 +95,7 @@
 }]
 ```
 
-`stage` 枚举：`seed` / `sprout` / `growing` / `mature` / `wilted`
+`stage` 枚举：`seed` / `sprout` / `growing` / `mature` / `wilted` / `archived`（已收获归档）
 
 ## 4. 任务 `/manor/tasks`
 
@@ -154,17 +154,117 @@
 }
 ```
 
-## 7. 预留接口（设计方案已定义，原型暂未实现）
+## 7. 庄园闭环 `/manor`
+
+### POST /manor/create — 创建/重命名庄园（新手引导）
+
+请求：`{ "name": "明曦庄园", "style": "中式" }`（style 支持 中式/西式/日式）
+
+响应：`data` 为最新庄园状态（与 GET /manor/state 同构）
+
+### POST /manor/plant/:id/harvest — 收获成熟植物（产品到期赎回）
+
+- 成功 200：`{ "plant": {...}, "rewards": {"coins": 40, "exp": 24}, "manor": {...}, "archived": {...} }`
+- 未成熟 409 `40901`（"植物尚未成熟"）；已归档 409；枯萎（提前赎回）409；不存在 404
+- 收获后植物 `stage` 变为 `archived`（emoji 🪵），奖励按物种周期递增（花朵40/果树100/林木200 金币）
+
+## 8. 装扮商城 `/shop`
+
+### GET /shop/items — 商品目录
+
+```json
+{ "items": [{ "id": "s_deco_fountain", "category": "decoration", "name": "好运喷泉", "emoji": "⛲",
+  "rarity": "rare", "price": { "coins": 120 }, "desc": "…", "slot": { "x": 320, "y": 138 },
+  "owned": false, "equipped": false }],
+  "manor": { "最新庄园状态" } }
+```
+
+`category`：`decoration` 装饰（slot 为场景坐标）/ `skin` 皮肤 / `title` 称号；`rarity`：normal/rare/epic/legend
+
+### POST /shop/buy — 购买：`{ itemId }`
+
+余额不足 409 `40901`；已拥有 409；成功返回 `{ item, cost, manor }`（余额已扣减）
+
+### POST /shop/equip — 装备/卸下：`{ itemId }`
+
+皮肤/称号同类互斥（装备新自动卸旧）；装饰可多装。返回 `{ items, equippedDecorations }`
+
+### GET /shop/inventory — 我的装扮（含庄园场景摆件）
+
+## 9. 社交与排行 `/social`
+
+### GET /social/friends — 好友列表
+
+```json
+[{ "id": "f_001", "name": "李晓雅", "avatar": "👩", "manorName": "雅苑小筑", "level": 12,
+  "score": 92, "online": true, "bio": "定投第366天",
+  "plants": [{ "species": "sunflower", "stage": "mature", "emoji": "🌻" }], "watered": false }]
+```
+
+### POST /social/visit/:id — 访问好友庄园
+
+返回 `{ friend, weather }`（好友庄园快照 + 天气）
+
+### POST /social/water/:id — 浇水（双方各 +5 金币，每人每日1次）
+
+重复浇水 409 `40901`；成功返回 `{ friend, rewards, manor }`
+
+### GET /social/leaderboard — 月度配置合理性排行榜
+
+```json
+{ "summary": { "participants": 11, "month": "2026年8月", "selfScore": 82, "selfRank": 8,
+  "scoreExplain": "评分 = 资产配置合理性（分散度/风险匹配/流动性）× AI月度评估" },
+  "list": [{ "rank": 1, "name": "林沐宸", "avatar": "🧑‍💼", "manorName": "宸光庄园", "level": 18, "score": 98, "isSelf": false }] }
+```
+
+## 10. AI 助手对话 `/ai`
+
+### POST /ai/chat — 规则引擎问答
+
+请求：`{ "message": "我想了解定投" }`
+
+```json
+{ "id": "r_dingtou", "reply": "定投是新手友好的投资方式：…", "chips": ["定投多少合适？", "推荐什么产品？"] }
+```
+
+规则数据驱动（`data/chatRules.js`，7 条规则 + 默认回复）；生产环境升级为大模型生成 + 本规则兜底
+
+## 11. 资产导入 `/assets`
+
+### POST /assets/import — 四通道导入
+
+请求：`{ "channel": "手动录入", "name": "海外美元存款", "category": "现金及存款", "amount": 50000, "institution": "某外资行" }`
+
+- `channel` 枚举：`自动同步 / 扫码导入 / OCR识别 / 手动录入`
+- `category` 枚举：现金及存款/权益类/基金理财/不动产/保险/其他
+- 成功返回 `{ account, overview }`（overview 为导入后重算的总览，todayChange 不受影响）
+
+## 12. 目标规划 `/goals`
+
+### POST /goals/plan — 测算（可选保存）
+
+请求：`{ "goalType": "home", "params": { "price": 3000000, "downPaymentPct": 30, "years": 5 }, "save": true }`
+
+`goalType`：`home`（需 price）/ `education`（需 childAge, targetAmount）/ `retirement`（需 monthlyIncome）/ `emergency`（需 monthlyExpense）
+
+```json
+{ "goal": { "id": "g_…", "goalType": "home", "label": "购房首付", "params": {...}, "plan": {...}, "createdAt": "2026-08-13" },
+  "plan": { "goalType": "home", "targetAmount": 900000, "monthlyNeed": 13577, "durationMonths": 60,
+    "suggestion": "…", "products": ["稳健理财组合", "大额存单", "指数基金定投"] } }
+```
+
+测算口径：年化 4% 复利（演示），`annuityPayment` 公式见 `goalService.js`
+
+### GET /goals — 已保存目标列表（按创建时间倒序）
+
+## 13. 预留接口（设计方案已定义，原型暂未实现）
 
 | 接口 | 说明 |
 |---|---|
-| `POST /assets/import` | 资产导入（自动/扫码/OCR/手动四通道） |
-| `POST /assets/ocr` | OCR 识别（房产证/车辆/保单） |
+| `POST /assets/ocr` | OCR 识别（房产证/车辆/保单，演示为流程模拟） |
 | `POST /assets/external-sync` | 外部资产同步（银联/券商授权） |
-| `POST /manor/create` | 创建庄园（新手引导） |
 | `POST /manor/plant/seed` | 种植种子（关联购买产品） |
-| `POST /manor/plant/:id/harvest` | 收获（产品到期） |
-| `GET /manor/shop/items` `POST /manor/shop/buy` | 装扮商城 |
-| `POST /manor/social/visit` `POST /manor/social/water` | 好友互动 |
-| `GET /manor/leaderboard` | 排行榜 |
-| `POST /ai/risk-assessment` `POST /ai/goal-planning` `POST /ai/chat` | AI 能力扩展 |
+| `POST /ai/risk-assessment` | 风险评估（生产接风评系统） |
+| `POST /ai/goal-planning` | 已由 `/goals/plan` 替代，此路径保留兼容占位 |
+| `POST /ai/chat` | 已实现（规则引擎），待升级大模型 |
+| `GET /manor/leaderboard` | 已由 `/social/leaderboard` 替代 |

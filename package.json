@@ -12,6 +12,7 @@
     "test": "npm --prefix server test",
     "lint": "npm --prefix server run lint && npm --prefix web run lint",
     "format": "npm --prefix server run format && npm --prefix web run format",
-    "capture": "node scripts/capture-demo.mjs"
+    "capture": "node scripts/capture-demo.mjs",
+    "smoke": "node scripts/smoke.mjs"
   }
 }

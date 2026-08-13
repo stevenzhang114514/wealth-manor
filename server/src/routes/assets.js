@@ -35,4 +35,13 @@ router.get('/accounts', async (_req, res) => {
   ok(res, data)
 })
 
+/** 资产导入（四通道）：body = { channel, name, category, amount, institution } */
+router.post('/import', async (req, res) => {
+  const result = await assetService.importAsset(req.body ?? {})
+  if (result.error) {
+    return fail(res, result.error.code, result.error.message)
+  }
+  ok(res, result.data, '导入成功，资产看板已更新')
+})
+
 export default router
