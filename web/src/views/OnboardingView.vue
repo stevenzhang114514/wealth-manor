@@ -22,7 +22,7 @@ const STEPS = [
   {
     icon: '📊',
     title: '先看清你的财富版图',
-    desc: '工行资产自动同步，他行/证券/不动产一键导入，\n财富树一屏总览你的全部资产与配置结构。',
+    desc: '银行资产自动同步，他行/证券/不动产一键导入，\n财富树一屏总览你的全部资产与配置结构。',
   },
   {
     icon: '🌻',
@@ -218,8 +218,8 @@ const finish = async () => {
 }
 
 .style-card.picked {
-  border-color: var(--icbc-red);
-  background: #fdf1f3;
+  border-color: var(--ios-blue);
+  background: #eef4ff;
   transform: scale(1.03);
 }
 
@@ -254,7 +254,7 @@ const finish = async () => {
 
 .dot.active {
   width: 22px;
-  background: var(--icbc-red);
+  background: var(--ios-blue);
 }
 
 .dot.done {

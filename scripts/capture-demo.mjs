@@ -1,7 +1,7 @@
 /**
- * 演示截图脚本：无头 Chrome 截取四大模块页面（375×812 整屏嵌入模式）
+ * 演示截图脚本：无头 Chrome 截取各模块页面（双尺寸：手机 375×812 / 平板 768×1024）
  * 前置：后端(3000)与前端(5173)已启动
- * 输出：../企划书/img/{manor,assets,tasks,quiz}.png（供企划书 3.5 平台演示引用）
+ * 输出：screenshots/{name}-{phone|pad}.png（企划书配图仍使用 企划书/img/，互不影响）
  * 运行：npm run capture
  */
 import { execFileSync } from 'node:child_process'
@@ -24,36 +24,45 @@ if (!chrome) {
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const OUT_DIR = path.resolve(__dirname, '../../企划书/img')
+const OUT_DIR = path.resolve(__dirname, '../screenshots')
 mkdirSync(OUT_DIR, { recursive: true })
 
+// skip_login：跳过登录守卫（截图不依赖 localStorage）
 const ROUTES = [
-  { name: 'manor', path: '/manor?skip_onboard=1' },
-  { name: 'assets', path: '/assets' },
-  { name: 'tasks', path: '/tasks' },
-  { name: 'quiz', path: '/quiz' },
-  { name: 'shop', path: '/shop' },
-  { name: 'social', path: '/social' },
+  { name: 'login', path: '/login' },
+  { name: 'manor', path: '/manor?skip_onboard=1&skip_login=1' },
+  { name: 'assets', path: '/assets?skip_login=1' },
+  { name: 'tasks', path: '/tasks?skip_login=1' },
+  { name: 'quiz', path: '/quiz?skip_login=1' },
+  { name: 'profile', path: '/profile?skip_login=1' },
+  { name: 'shop', path: '/shop?skip_login=1' },
+  { name: 'social', path: '/social?skip_login=1' },
+]
+
+const SIZES = [
+  { label: 'phone', w: 375, h: 812 },
+  { label: 'pad', w: 768, h: 1024 },
 ]
 
 for (const r of ROUTES) {
-  const sep = r.path.includes('?') ? '&' : '?'
-  const url = `http://localhost:5173${r.path}${sep}embed=1`
-  const out = path.join(OUT_DIR, `${r.name}.png`)
-  console.log(`截图 ${r.name}: ${url}`)
-  execFileSync(
-    chrome,
-    [
-      '--headless=new',
-      '--disable-gpu',
-      '--hide-scrollbars',
-      '--window-size=375,812',
-      '--virtual-time-budget=8000',
-      '--screenshot=' + out,
-      url,
-    ],
-    { stdio: 'inherit', timeout: 60000 },
-  )
-  console.log(`  已保存: ${out}`)
+  for (const s of SIZES) {
+    const sep = r.path.includes('?') ? '&' : '?'
+    const url = `http://localhost:5173${r.path}${sep}embed=1`
+    const out = path.join(OUT_DIR, `${r.name}-${s.label}.png`)
+    console.log(`截图 ${r.name}-${s.label}: ${url}`)
+    execFileSync(
+      chrome,
+      [
+        '--headless=new',
+        '--disable-gpu',
+        '--hide-scrollbars',
+        `--window-size=${s.w},${s.h}`,
+        '--virtual-time-budget=8000',
+        '--screenshot=' + out,
+        url,
+      ],
+      { stdio: 'inherit', timeout: 60000 },
+    )
+  }
 }
-console.log('完成。企划书重新编译即可插入截图（latexmk -xelatex main.tex）。')
+console.log(`完成，共 ${ROUTES.length * SIZES.length} 张，输出目录：${OUT_DIR}`)

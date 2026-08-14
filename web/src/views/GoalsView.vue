@@ -2,11 +2,12 @@
 /**
  * 场景化理财规划：购房/教育/养老/应急 测算器 + 已存目标
  */
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { planGoal, getGoals } from '../api/goal.js'
 import { formatMoney } from '../utils/format.js'
 import { toast } from '../utils/toast.js'
 import BackHeader from '../components/BackHeader.vue'
+import SegmentedControl from '../components/SegmentedControl.vue'
 
 const TABS = [
   { key: 'home', label: '🏠 购房' },
@@ -78,28 +79,17 @@ const calc = async (save = false) => {
 
 const GOAL_LABELS = { home: '🏠', education: '🎓', retirement: '🌅', emergency: '🧯' }
 
-/** 切换测算类型并清空上次结果 */
-const switchTab = (key) => {
-  tab.value = key
+// 切换测算类型时清空上次结果
+watch(tab, () => {
   result.value = null
-}
+})
 </script>
 
 <template>
   <div class="goals-view">
     <BackHeader title="🎯 目标规划" />
 
-    <div class="sub-tabs">
-      <button
-        v-for="t in TABS"
-        :key="t.key"
-        class="sub-tab"
-        :class="{ active: tab === t.key }"
-        @click="switchTab(t.key)"
-      >
-        {{ t.label }}
-      </button>
-    </div>
+    <SegmentedControl v-model="tab" :options="TABS" />
 
     <!-- 参数表单 -->
     <div class="wm-card">
@@ -180,30 +170,6 @@ const switchTab = (key) => {
   padding-bottom: 14px;
 }
 
-.sub-tabs {
-  display: flex;
-  gap: 6px;
-  margin: 12px 12px 0;
-}
-
-.sub-tab {
-  flex: 1;
-  border: none;
-  background: #fff;
-  border-radius: 999px;
-  padding: 8px 0;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--text-sub);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(31, 45, 61, 0.05);
-}
-
-.sub-tab.active {
-  background: var(--icbc-red);
-  color: #fff;
-}
-
 .form-row {
   display: flex;
   align-items: center;
@@ -228,7 +194,7 @@ const switchTab = (key) => {
 }
 
 .form-input:focus {
-  border-color: var(--icbc-red);
+  border-color: var(--ios-blue);
 }
 
 .form-unit {
@@ -266,14 +232,14 @@ const switchTab = (key) => {
 }
 
 .r-main {
-  color: var(--icbc-red) !important;
+  color: var(--ios-blue) !important;
   font-size: 15px;
 }
 
 .result-big {
   font-size: 15px;
   font-weight: 800;
-  color: var(--icbc-red);
+  color: var(--ios-blue);
   margin-bottom: 4px;
 }
 

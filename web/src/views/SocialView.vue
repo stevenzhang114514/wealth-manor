@@ -7,6 +7,12 @@ import { getFriends, visitFriend, waterFriend, getLeaderboard } from '../api/soc
 import { useManorStore } from '../stores/manor.js'
 import { toast, flyCoin } from '../utils/toast.js'
 import BackHeader from '../components/BackHeader.vue'
+import SegmentedControl from '../components/SegmentedControl.vue'
+
+const TABS = [
+  { key: 'friends', label: '🤝 好友' },
+  { key: 'board', label: '🏆 排行PK' },
+]
 
 const manor = useManorStore()
 const tab = ref('friends')
@@ -63,14 +69,7 @@ const waterFromVisit = async () => {
   <div class="social-view">
     <BackHeader title="👥 好友与排行" />
 
-    <div class="sub-tabs">
-      <button class="sub-tab" :class="{ active: tab === 'friends' }" @click="tab = 'friends'">
-        🤝 好友
-      </button>
-      <button class="sub-tab" :class="{ active: tab === 'board' }" @click="tab = 'board'">
-        🏆 排行PK
-      </button>
-    </div>
+    <SegmentedControl v-model="tab" :options="TABS" />
 
     <!-- 好友列表 -->
     <div v-if="tab === 'friends'" class="friend-list">
@@ -174,30 +173,6 @@ const waterFromVisit = async () => {
   padding-bottom: 14px;
 }
 
-.sub-tabs {
-  display: flex;
-  gap: 8px;
-  margin: 12px 12px 0;
-}
-
-.sub-tab {
-  flex: 1;
-  border: none;
-  background: #fff;
-  border-radius: 999px;
-  padding: 9px 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-sub);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(31, 45, 61, 0.05);
-}
-
-.sub-tab.active {
-  background: var(--icbc-red);
-  color: #fff;
-}
-
 .friend-list {
   margin: 10px 12px 0;
   display: flex;
@@ -235,7 +210,7 @@ const waterFromVisit = async () => {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #4caf50;
+  background: var(--ios-green);
   border: 2px solid #fff;
 }
 
@@ -336,8 +311,8 @@ const waterFromVisit = async () => {
 }
 
 .board-row.self {
-  background: #fdf1f3;
-  border: 1.5px solid var(--icbc-red);
+  background: #eef4ff;
+  border: 1.5px solid var(--ios-blue);
 }
 
 .b-rank {
@@ -376,7 +351,7 @@ const waterFromVisit = async () => {
 .b-score {
   font-size: 16px;
   font-weight: 800;
-  color: var(--icbc-red);
+  color: var(--ios-blue);
 }
 
 .board-explain {

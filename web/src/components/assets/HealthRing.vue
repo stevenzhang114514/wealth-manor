@@ -14,7 +14,7 @@ const { el, setOption } = useECharts()
 
 const scoreColor = computed(() => {
   if (props.score >= 90) return '#3e8e5a'
-  if (props.score >= 75) return '#4e8c4e'
+  if (props.score >= 75) return 'var(--manor-green)'
   if (props.score >= 60) return '#f5b83d'
   return '#e0524d'
 })

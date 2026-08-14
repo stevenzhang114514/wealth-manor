@@ -1,27 +1,33 @@
 <script setup>
 /**
- * 桌面演示外壳：
- *   - 左侧：项目简介 + 创新点 + 模块导航
- *   - 中间：手机框（375×812）
- *   - 右侧：当前模块说明 + 对应接口
- * 加 ?embed=1 进入整屏嵌入模式（截图/投屏演示用）
+ * 演示外壳：
+ *   - 左侧：产品简介 + 模块导航（≥1200px 显示）
+ *   - 中间：手机框（响应式缩放）
+ *   - 右侧：当前模块说明 + 对应接口（≥1200px 显示）
+ * 移动端自动全屏；?embed=1 强制整屏（截图/投屏用）
  */
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import PhoneFrame from './components/PhoneFrame.vue'
 
 const route = useRoute()
-// 整屏模式：?embed=1 显式开启，或手机浏览器自动进入（隐藏桌面侧栏，铺满屏幕）
 const isMobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)
 const isEmbed = new URLSearchParams(location.search).get('embed') === '1' || isMobile
 
 const MODULES = {
+  '/login': {
+    icon: '🔐',
+    title: '登录',
+    desc: '手机号一键登录（演示模式任意 11 位手机号）。独立产品的身份入口。',
+    apis: ['POST /api/v1/user/login'],
+    points: ['手机号格式校验', '登录态本地持久化', '路由守卫保护页面'],
+  },
   '/manor': {
     icon: '🏡',
-    title: '庄园主页',
-    desc: '游戏化理财核心场景：天气=今日行情，植物=持仓产品，生长阶段由持有期实时计算，点击植物查看关联理财产品的收益。',
+    title: '财富庄园',
+    desc: '游戏化理财首页：天气=今日行情，植物=持仓产品，生长阶段由持有期实时计算，成熟后可收获。',
     apis: ['GET /api/v1/manor/state', 'GET /api/v1/manor/weather', 'GET /api/v1/manor/plants'],
-    points: ['天气与行情联动（晴/雨/彩虹）', '点击植物 → 查看持仓收益', '等级经验与任务联动'],
+    points: ['天气与行情联动（晴/雨/彩虹）', '点击植物 → 查看持仓收益', '收获闭环 + 等级经验'],
   },
   '/assets': {
     icon: '📊',
@@ -48,6 +54,13 @@ const MODULES = {
     desc: '每日5题理财知识问答，提交即时判分，答对得金币经验，满分获徽章碎片。',
     apis: ['GET /api/v1/quiz/questions?n=5', 'POST /api/v1/quiz/submit'],
     points: ['5题随机抽取自题库', '即时判分 + 解析展示'],
+  },
+  '/profile': {
+    icon: '👤',
+    title: '我的',
+    desc: '个人中心：头像/风险等级、庄园与资产概览、理财目标入口、退出登录。',
+    apis: ['GET /api/v1/user/profile'],
+    points: ['用户资料与风险等级', '庄园资产概览', '退出登录清理会话'],
   },
   '/shop': {
     icon: '🛍️',
@@ -85,7 +98,7 @@ const MODULES = {
   '/import': {
     icon: '➕',
     title: '资产导入',
-    desc: '四通道导入：工行自动同步、扫码、拍照OCR、手动录入；手动录入真实入账看板重算。',
+    desc: '四通道导入：银行自动同步、扫码、拍照OCR、手动录入；手动录入真实入账看板重算。',
     apis: ['POST /api/v1/assets/import'],
     points: ['四通道流程演示', '导入后净资产实时重算'],
   },
@@ -100,14 +113,16 @@ const MODULES = {
 
 const current = computed(() => MODULES[route.path] ?? MODULES['/manor'])
 
-const tabs = Object.entries(MODULES).map(([path, m]) => ({ path, ...m }))
+const tabs = Object.entries(MODULES)
+  .filter(([path]) => path !== '/login' && path !== '/onboarding')
+  .map(([path, m]) => ({ path, ...m }))
 </script>
 
 <template>
   <div class="demo-shell" :class="{ embed: isEmbed }">
-    <aside v-if="!isEmbed" class="side-panel">
-      <h3>🏡 财富庄园 · Wealth Manor</h3>
-      <p class="sub">工行APP游戏化智能理财 &amp; 个人财产管理平台（演示原型）</p>
+    <aside v-if="!isEmbed" class="side-panel glass">
+      <h3>¥ 个人理财系统</h3>
+      <p class="sub">游戏化智能理财与个人财产管理平台 · 财富庄园引擎驱动</p>
       <div class="module-nav">
         <router-link
           v-for="t in tabs"
@@ -130,7 +145,7 @@ const tabs = Object.entries(MODULES).map(([path, m]) => ({ path, ...m }))
 
     <PhoneFrame />
 
-    <aside v-if="!isEmbed" class="side-panel">
+    <aside v-if="!isEmbed" class="side-panel glass">
       <h3>{{ current.icon }} {{ current.title }}</h3>
       <p class="sub">{{ current.desc }}</p>
       <div class="point-list">
@@ -163,17 +178,17 @@ const tabs = Object.entries(MODULES).map(([path, m]) => ({ path, ...m }))
   align-items: center;
   gap: 8px;
   padding: 9px 12px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   font-size: 13px;
   font-weight: 600;
   color: var(--text-main);
   text-decoration: none;
-  background: #f4f6f8;
+  background: rgba(255, 255, 255, 0.6);
   transition: all 0.15s ease;
 }
 
 .module-link.active {
-  background: var(--icbc-red);
+  background: var(--ios-blue);
   color: #fff;
 }
 
@@ -191,8 +206,8 @@ const tabs = Object.entries(MODULES).map(([path, m]) => ({ path, ...m }))
 }
 
 .api-box {
-  background: #f7f8fa;
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: var(--r-md);
   padding: 10px 12px;
   margin-bottom: 14px;
 }
@@ -212,7 +227,7 @@ const tabs = Object.entries(MODULES).map(([path, m]) => ({ path, ...m }))
   word-break: break-all;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1199px) {
   .side-panel {
     display: none;
   }

@@ -1,12 +1,14 @@
 <script setup>
 /**
- * 庄园场景（SVG 手绘风）
+ * 庄园场景（SVG 手绘风 · Apple 浅色系）
  * - 天空/天气特效与当日行情联动（晴/雨/多云/彩虹/暴风雨）
- * - 地块按类型分组，植物生长阶段（种子/发芽/生长/成熟/枯萎）映射为表情与大小
+ * - 远山/栅栏/石板路/小屋等场景细节
+ * - 地块按类型分组，植物生长阶段映射为表情与大小
+ * - 商城装饰摆件装备后实景渲染（含底座光影）
  * - 点击植物 → 弹出关联理财产品详情（PlantCard）
  *
  * 【扩展点】生产环境：本场景由 Cocos Creator 游戏引擎渲染，
- * 组件接口保持（plants/weather/select 事件）不变即可平滑替换。
+ * 组件接口保持（plants/weather/decorations/select 事件）不变即可平滑替换。
  */
 import { computed } from 'vue'
 
@@ -27,10 +29,9 @@ const PLOT_LAYOUT = [
   { type: 'orchard', x: 318, y: 262, w: 58, h: 46, label: '果园' },
 ]
 
-const STAGE_SIZE = { seed: 17, sprout: 23, growing: 28, mature: 35, wilted: 26 }
+const STAGE_SIZE = { seed: 17, sprout: 23, growing: 28, mature: 35, wilted: 26, archived: 22 }
 
 const plots = computed(() => {
-  const order = ['garden', 'orchard']
   const plantsByType = (t) => props.plants.filter((p) => p.plotType === t)
   const result = []
   let gi = 0
@@ -39,7 +40,7 @@ const plots = computed(() => {
     const bucket = layout.type === 'garden' ? plantsByType('garden') : plantsByType('orchard')
     const idx = layout.type === 'garden' ? gi++ : oi++
     const plant = bucket[idx] ?? null
-    result.push({ ...layout, plant, order })
+    result.push({ ...layout, plant })
   }
   return result
 })
@@ -52,7 +53,7 @@ const sky = computed(() => {
   switch (props.weather?.code) {
     case 'rainy':
     case 'storm':
-      return ['#cdd8e3', '#e8eef4']
+      return ['#c4d0dc', '#e8eef4']
     case 'rainbow':
       return ['#cfe8ff', '#eef8ff']
     default:
@@ -66,6 +67,9 @@ const raindrops = Array.from({ length: 16 }, (_, i) => ({
   delay: -((i * 0.21) % 1.6).toFixed(2),
   len: 14 + ((i * 7) % 10),
 }))
+
+/** 栅栏木桩（确定性生成） */
+const fencePosts = Array.from({ length: 15 }, (_, i) => 10 + i * 25)
 </script>
 
 <template>
@@ -90,15 +94,16 @@ const raindrops = Array.from({ length: 16 }, (_, i) => ({
 
       <!-- 太阳（晴/彩虹） -->
       <g v-if="['sunny', 'rainbow'].includes(weather?.code)" class="sun-group">
-        <circle cx="304" cy="58" r="22" fill="#ffd54f" />
+        <circle cx="304" cy="58" r="26" fill="#ffd54f" opacity="0.35" />
+        <circle cx="304" cy="58" r="20" fill="#ffd54f" />
         <g class="sun-rays">
           <line
             v-for="i in 8"
             :key="i"
             x1="304"
-            :y1="58 - 34"
+            :y1="58 - 32"
             x2="304"
-            :y2="58 - 42"
+            :y2="58 - 40"
             stroke="#ffd54f"
             stroke-width="3"
             stroke-linecap="round"
@@ -155,6 +160,18 @@ const raindrops = Array.from({ length: 16 }, (_, i) => ({
         />
       </g>
 
+      <!-- 远山（两层剪影） -->
+      <path
+        d="M 0 236 L 48 190 L 96 224 L 148 178 L 204 226 L 258 184 L 316 222 L 375 190 V 356 H 0 Z"
+        fill="#d5e3ec"
+        opacity="0.55"
+      />
+      <path
+        d="M 0 252 L 70 214 L 130 246 L 200 208 L 270 244 L 330 216 L 375 240 V 356 H 0 Z"
+        fill="#c2d8c9"
+        opacity="0.7"
+      />
+
       <!-- 温室（长期投资） -->
       <g class="greenhouse">
         <rect
@@ -162,20 +179,20 @@ const raindrops = Array.from({ length: 16 }, (_, i) => ({
           y="168"
           width="72"
           height="52"
-          rx="6"
-          fill="#dfeef2"
-          stroke="#9cc0c9"
+          rx="8"
+          fill="#e3eef4"
+          stroke="#a8c8d4"
           stroke-width="2"
         />
         <path
           d="M 138 190 A 36 28 0 0 1 210 190 Z"
-          fill="#f2fbff"
-          stroke="#9cc0c9"
+          fill="#f4fbff"
+          stroke="#a8c8d4"
           stroke-width="2"
         />
-        <line x1="174" y1="166" x2="174" y2="188" stroke="#9cc0c9" stroke-width="1.5" />
-        <line x1="150" y1="178" x2="150" y2="188" stroke="#9cc0c9" stroke-width="1.5" />
-        <line x1="198" y1="178" x2="198" y2="188" stroke="#9cc0c9" stroke-width="1.5" />
+        <line x1="174" y1="166" x2="174" y2="188" stroke="#a8c8d4" stroke-width="1.5" />
+        <line x1="150" y1="178" x2="150" y2="188" stroke="#a8c8d4" stroke-width="1.5" />
+        <line x1="198" y1="178" x2="198" y2="188" stroke="#a8c8d4" stroke-width="1.5" />
         <text
           v-if="greenhousePlant"
           x="174"
@@ -200,32 +217,102 @@ const raindrops = Array.from({ length: 16 }, (_, i) => ({
         </text>
       </g>
 
+      <!-- 栅栏 -->
+      <g class="fence">
+        <rect
+          v-for="x in fencePosts"
+          :key="x"
+          :x="x"
+          y="206"
+          width="7"
+          height="20"
+          rx="3"
+          fill="#fff"
+          stroke="#e3e0d5"
+          stroke-width="1"
+        />
+        <rect
+          x="0"
+          y="211"
+          width="375"
+          height="4"
+          rx="2"
+          fill="#f5f1e6"
+          stroke="#e3e0d5"
+          stroke-width="0.5"
+        />
+      </g>
+
       <!-- 后景草地 -->
-      <ellipse cx="187" cy="252" rx="200" ry="34" fill="#b9d69b" />
+      <ellipse cx="187" cy="252" rx="200" ry="34" fill="#c4dcab" />
+
+      <!-- 石板路 -->
+      <g class="stone-path">
+        <ellipse cx="150" cy="330" rx="30" ry="7" fill="#ddd8cc" opacity="0.9" />
+        <ellipse cx="205" cy="336" rx="24" ry="6" fill="#d2cdc0" opacity="0.9" />
+        <ellipse cx="250" cy="330" rx="28" ry="7" fill="#ddd8cc" opacity="0.9" />
+      </g>
 
       <!-- 地块 -->
       <g v-for="p in plots" :key="p.x" class="plot" @click="p.plant && emit('select', p.plant)">
+        <!-- 地块底座 -->
+        <rect
+          :x="p.x - 2"
+          :y="p.y - 2"
+          :width="p.w + 4"
+          :height="p.h + 4"
+          rx="13"
+          fill="#000"
+          opacity="0.08"
+        />
         <rect
           :x="p.x"
           :y="p.y"
           :width="p.w"
           :height="p.h"
-          rx="10"
-          :fill="p.type === 'garden' ? '#c9a66b' : '#b68f56'"
-          stroke="#a5824a"
-          stroke-width="2"
+          rx="11"
+          :fill="p.type === 'garden' ? '#d9b987' : '#c69a62'"
+          stroke="#b98d52"
+          stroke-width="1.5"
+        />
+        <!-- 土壤细节 -->
+        <path
+          :d="`M ${p.x + 8} ${p.y + 12} q 8 -5 16 0 M ${p.x + 30} ${p.y + 20} q 7 -4 14 0`"
+          stroke="#b98d52"
+          stroke-width="1"
+          fill="none"
+          opacity="0.6"
+        />
+        <!-- 标签 -->
+        <rect
+          :x="p.x + 4"
+          :y="p.y - 12"
+          :width="p.w - 8"
+          height="12"
+          rx="6"
+          fill="#fff"
+          opacity="0.9"
         />
         <text
           :x="p.x + p.w / 2"
-          :y="p.y - 5"
+          :y="p.y - 3"
           text-anchor="middle"
-          font-size="9"
-          fill="#7d6a45"
-          class="plot-label"
+          font-size="8.5"
+          fill="#8a6d45"
+          font-weight="700"
         >
           {{ p.label }}
         </text>
         <template v-if="p.plant">
+          <!-- 植物影子 -->
+          <ellipse
+            :cx="p.x + p.w / 2"
+            :cy="p.y + p.h - 6"
+            rx="14"
+            ry="4"
+            fill="#7d5c2e"
+            opacity="0.22"
+          />
           <text
             :x="p.x + p.w / 2"
             :y="p.y + 20"
@@ -253,6 +340,7 @@ const raindrops = Array.from({ length: 16 }, (_, i) => ({
           :y="p.y + 24"
           text-anchor="middle"
           font-size="12"
+          fill="#8a6d45"
           opacity="0.45"
         >
           +
@@ -260,10 +348,12 @@ const raindrops = Array.from({ length: 16 }, (_, i) => ({
       </g>
 
       <!-- 前景草地 -->
-      <rect x="0" y="308" width="375" height="48" fill="#a8c686" />
+      <rect x="0" y="308" width="375" height="48" fill="#b1d191" />
+      <rect x="0" y="340" width="375" height="16" fill="#9cc47e" />
 
-      <!-- 商城装饰摆件（装备后实景渲染） -->
+      <!-- 商城装饰摆件（装备后实景渲染，含底座光影） -->
       <g v-for="(d, i) in decorations" :key="d.id">
+        <ellipse :cx="d.slot.x" :cy="d.slot.y + 14" rx="13" ry="4" fill="#5c7a3a" opacity="0.25" />
         <text
           :x="d.slot.x"
           :y="d.slot.y"
@@ -280,10 +370,10 @@ const raindrops = Array.from({ length: 16 }, (_, i) => ({
 
 <style scoped>
 .manor-scene {
-  border-radius: var(--radius);
+  border-radius: var(--r-lg);
   overflow: hidden;
   margin: 10px 12px;
-  box-shadow: 0 2px 10px rgba(31, 45, 61, 0.06);
+  box-shadow: var(--shadow-card);
 }
 
 .scene-svg {

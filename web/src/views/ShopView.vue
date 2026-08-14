@@ -7,6 +7,7 @@ import { getShopItems, buyShopItem, equipShopItem } from '../api/shop.js'
 import { useManorStore } from '../stores/manor.js'
 import { toast } from '../utils/toast.js'
 import BackHeader from '../components/BackHeader.vue'
+import SegmentedControl from '../components/SegmentedControl.vue'
 
 const manor = useManorStore()
 const items = ref([])
@@ -23,7 +24,7 @@ const RARITY = {
   normal: { label: '普通', color: '#8a8f99' },
   rare: { label: '稀有', color: '#4e8c4e' },
   epic: { label: '史诗', color: '#8e7cc3' },
-  legend: { label: '传说', color: '#c8102e' },
+  legend: { label: '传说', color: 'var(--ios-blue)' },
 }
 
 const filtered = computed(() => items.value.filter((i) => i.category === tab.value))
@@ -75,17 +76,7 @@ const onEquip = async (item) => {
     </div>
 
     <!-- 分类页签 -->
-    <div class="shop-tabs">
-      <button
-        v-for="t in TABS"
-        :key="t.key"
-        class="shop-tab"
-        :class="{ active: tab === t.key }"
-        @click="tab = t.key"
-      >
-        {{ t.label }}
-      </button>
-    </div>
+    <SegmentedControl v-model="tab" :options="TABS" />
 
     <!-- 商品列表 -->
     <div class="item-grid">
@@ -157,30 +148,6 @@ const onEquip = async (item) => {
   margin-left: auto;
   font-size: 9.5px;
   color: #a08a4e;
-}
-
-.shop-tabs {
-  display: flex;
-  gap: 8px;
-  margin: 12px 12px 0;
-}
-
-.shop-tab {
-  flex: 1;
-  border: none;
-  background: #fff;
-  border-radius: 999px;
-  padding: 8px 0;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-sub);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(31, 45, 61, 0.05);
-}
-
-.shop-tab.active {
-  background: var(--icbc-red);
-  color: #fff;
 }
 
 .item-grid {

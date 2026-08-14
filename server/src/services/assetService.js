@@ -1,6 +1,6 @@
 /**
  * 资产服务（业务逻辑层）
- * 只依赖 provider 注册表获取数据，不关心数据来源（Mock / 真实工行接口）。
+ * 只依赖 provider 注册表获取数据，不关心数据来源（Mock / 真实机构接口）。
  */
 import { getProvider } from '../providers/index.js'
 import { ERROR_CODES } from '../utils/response.js'

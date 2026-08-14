@@ -1,11 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 /**
- * 路由表：底部 Tab 四个模块
+ * 路由表：底部 Tab 五个主模块 + 子页面
  * 新增模块步骤：新建 views/XxxView.vue → 在此追加路由 → TabBar 追加一项
  */
 const routes = [
   { path: '/', redirect: '/manor' },
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('../views/LoginView.vue'),
+    meta: { icon: '🔐', label: '登录', hideTab: true },
+  },
   {
     path: '/manor',
     name: 'manor',
@@ -29,6 +35,12 @@ const routes = [
     name: 'quiz',
     component: () => import('../views/QuizView.vue'),
     meta: { icon: '🎓', label: '答题' },
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('../views/ProfileView.vue'),
+    meta: { icon: '👤', label: '我的' },
   },
   {
     path: '/shop',
@@ -68,7 +80,26 @@ const routes = [
   },
 ]
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes,
 })
+
+/**
+ * 登录守卫（演示口径）：
+ *   - 未登录访问任何页面 → /login（?skip_login=1 供截图/演示跳过）
+ *   - 已登录访问 /login → /manor
+ */
+router.beforeEach((to) => {
+  const skip = new URLSearchParams(location.search).get('skip_login') === '1'
+  const logged = localStorage.getItem('wm-user')
+  if (to.path !== '/login' && !logged && !skip) {
+    return '/login'
+  }
+  if (to.path === '/login' && logged) {
+    return '/manor'
+  }
+  return true
+})
+
+export default router

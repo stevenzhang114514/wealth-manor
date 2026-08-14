@@ -2,7 +2,7 @@
  * axios 实例与统一拦截
  * 约定：后端所有接口返回 { code, message, data }，code=0 为成功。
  * 拦截器解包 data 直接返回，业务层无需重复判断。
- * 【扩展点】生产环境在此接入工行统一认证 token 注入（请求拦截器）。
+ * 【扩展点】生产环境在此接入统一认证 token 注入（请求拦截器）。
  */
 import axios from 'axios'
 import { toast } from '../utils/toast.js'

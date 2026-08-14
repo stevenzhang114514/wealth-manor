@@ -102,6 +102,14 @@ const run = async () => {
   r = await post('/assets/import', { channel: '错误渠道', name: 'x', category: '现金及存款', amount: 1 })
   check('非法渠道 40001', r.body.code === 40001)
 
+  console.log('▶ 用户域')
+  r = await post('/user/login', { phone: '13800138000' })
+  check('登录返回 token', typeof r.body.data?.token === 'string' && r.body.data.token.startsWith('mock-token'))
+  r = await post('/user/login', { phone: '12345' })
+  check('非法手机号 40001', r.body.code === 40001)
+  r = await get('/user/profile')
+  check('资料含风险等级', r.body.data?.riskLevel === 'R3')
+
   console.log('▶ 兜底')
   r = await get('/nonexistent')
   check('404 统一包装', r.status === 404 && r.body.code === 40401)

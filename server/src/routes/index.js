@@ -15,6 +15,7 @@ import aiRouter from './ai.js'
 import shopRouter from './shop.js'
 import socialRouter from './social.js'
 import goalsRouter from './goals.js'
+import userRouter from './user.js'
 
 const router = Router()
 
@@ -26,5 +27,6 @@ router.use('/ai', aiRouter)
 router.use('/shop', shopRouter)
 router.use('/social', socialRouter)
 router.use('/goals', goalsRouter)
+router.use('/user', userRouter)
 
 export default router

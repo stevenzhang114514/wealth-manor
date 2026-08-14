@@ -45,7 +45,7 @@ watch(
           smooth: true,
           symbol: 'none',
           data: pts.map((p) => p.netWorth),
-          lineStyle: { width: 2.5, color: '#c8102e' },
+          lineStyle: { width: 2.5, color: 'var(--ios-blue)' },
           areaStyle: {
             color: {
               type: 'linear',

@@ -15,6 +15,7 @@ export default [
         location: 'readonly',
         navigator: 'readonly',
         URLSearchParams: 'readonly',
+        ResizeObserver: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         setInterval: 'readonly',

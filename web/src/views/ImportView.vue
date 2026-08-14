@@ -19,7 +19,7 @@ const CHANNELS = [
   {
     key: '自动同步',
     icon: '🏦',
-    title: '工行资产自动同步',
+    title: '银行资产自动同步',
     desc: '存款/理财/基金/贷款/信用卡，行内直连免操作',
     action: 'sync',
   },
@@ -59,7 +59,7 @@ const onChannel = async (ch) => {
     scanning.value = ch.key
     await new Promise((r) => setTimeout(r, 900))
     scanning.value = ''
-    toast('已同步工行 9 个账户（演示版：实际接入行内账户体系后免操作同步）', 'success')
+    toast('已同步银行 9 个账户（演示版：实际接入账户体系后免操作同步）', 'success')
   } else if (ch.action === 'scan') {
     scanning.value = ch.key
     await new Promise((r) => setTimeout(r, 900))
@@ -237,7 +237,7 @@ const goAssets = () => router.push('/assets')
 
 .m-input:focus,
 .m-select:focus {
-  border-color: var(--icbc-red);
+  border-color: var(--ios-blue);
 }
 
 .m-row {

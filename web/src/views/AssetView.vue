@@ -122,12 +122,12 @@ const addAsset = () => toast('资产导入（演示版）：支持自动同步/�
 }
 
 .entry-item:active {
-  background: #fdf1f3;
-  color: var(--icbc-red);
+  background: #eef4ff;
+  color: var(--ios-blue);
 }
 
 .asset-hero {
-  background: linear-gradient(135deg, #c8102e 0%, #a00d24 70%, #8c0a1e 100%);
+  background: linear-gradient(135deg, var(--ios-blue) 0%, var(--ios-blue-dark) 70%, #0055c8 100%);
   color: #fff;
   padding: 20px 18px 18px;
   border-radius: 0 0 22px 22px;

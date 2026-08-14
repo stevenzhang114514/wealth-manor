@@ -251,7 +251,7 @@ const restart = () => {
 }
 
 .dot.active {
-  background: var(--icbc-red);
+  background: var(--ios-blue);
 }
 
 .question-card {
@@ -287,8 +287,8 @@ const restart = () => {
 }
 
 .option.picked {
-  border-color: var(--icbc-red);
-  background: #fdf1f3;
+  border-color: var(--ios-blue);
+  background: #eef4ff;
 }
 
 .opt-letter {
@@ -305,7 +305,7 @@ const restart = () => {
 }
 
 .option.picked .opt-letter {
-  background: var(--icbc-red);
+  background: var(--ios-blue);
   color: #fff;
 }
 
@@ -341,7 +341,7 @@ const restart = () => {
   height: 96px;
   margin: 12px auto;
   border-radius: 50%;
-  background: conic-gradient(var(--icbc-red) var(--pct), #eef0f2 var(--pct));
+  background: conic-gradient(var(--ios-blue) var(--pct), #eef0f2 var(--pct));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -360,7 +360,7 @@ const restart = () => {
   position: relative;
   font-size: 30px;
   font-weight: 800;
-  color: var(--icbc-red);
+  color: var(--ios-blue);
 }
 
 .score-total {

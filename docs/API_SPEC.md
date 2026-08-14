@@ -257,7 +257,21 @@
 
 ### GET /goals — 已保存目标列表（按创建时间倒序）
 
-## 13. 预留接口（设计方案已定义，原型暂未实现）
+## 13. 用户域 `/user`
+
+### POST /user/login — 登录（Mock）
+
+请求：`{ "phone": "13800138000" }`；校验 11 位手机号（`1\d{10}`），失败 400 `40001`。
+
+```json
+{ "token": "mock-token-8000", "user": { "id": "u_10086", "phone": "138****8000", "name": "张明",
+  "avatar": "🧑‍🌾", "riskLevel": "R3", "riskLevelName": "稳健型", "manorName": "明曦庄园",
+  "signupDays": 366, "totalAssets": 1535800, "netWorth": 1155800 } }
+```
+
+### GET /user/profile — 用户资料（同 user 结构，含资产概览）
+
+## 14. 预留接口（设计方案已定义，原型暂未实现）
 
 | 接口 | 说明 |
 |---|---|

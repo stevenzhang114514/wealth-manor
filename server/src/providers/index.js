@@ -21,6 +21,7 @@ const PROVIDERS = {
     shop: () => import('./mock/shopProvider.js'),
     social: () => import('./mock/socialProvider.js'),
     goal: () => import('./mock/goalProvider.js'),
+    user: () => import('./mock/userProvider.js'),
   },
   // icbc: {
   //   asset: () => import('./icbc/assetProvider.js'),

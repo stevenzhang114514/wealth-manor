@@ -146,7 +146,7 @@ const send = async (text) => {
 }
 
 .msg-row.user .bubble {
-  background: linear-gradient(135deg, #c8102e, #a00d24);
+  background: linear-gradient(135deg, var(--ios-blue), var(--ios-blue-dark));
   color: #fff;
   border-radius: 14px 14px 4px 14px;
 }
@@ -160,7 +160,7 @@ const send = async (text) => {
 .chip {
   border: 1px solid #f0c9d0;
   background: #fff;
-  color: var(--icbc-red);
+  color: var(--ios-blue);
   font-size: 10.5px;
   font-weight: 600;
   padding: 4px 10px;
@@ -169,7 +169,7 @@ const send = async (text) => {
 }
 
 .chip:active {
-  background: #fdf1f3;
+  background: #eef4ff;
 }
 
 .bubble.typing {
@@ -224,7 +224,7 @@ const send = async (text) => {
 }
 
 .chat-input:focus {
-  border-color: var(--icbc-red);
+  border-color: var(--ios-blue);
 }
 
 .send-btn {
