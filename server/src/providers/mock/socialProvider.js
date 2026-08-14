@@ -1,7 +1,7 @@
 /**
  * 社交域 Mock Provider
  *
- * 【契约】真实环境实现 src/providers/icbc/socialProvider.js 时，
+ * 【契约】真实环境实现 src/providers/prod/socialProvider.js 时，
  * 必须导出与本文件一致的函数签名与返回结构：
  *   getFriends()            → [{ id, name, avatar, manorName, level, score, online, bio, plants }]
  *   getFriend(id)           → 单个好友或 null

@@ -61,7 +61,7 @@ docs: 更新 API_SPEC 任务状态机说明
 | 环境变量 | 默认 | 说明 |
 |---|---|---|
 | `PORT` | 3000 | 后端端口 |
-| `DATA_PROVIDER` | mock | 数据提供方：mock / icbc（待实现） |
+| `DATA_PROVIDER` | mock | 数据提供方：mock / prod（待实现） |
 
 - 本地开发：`npm run dev:server` + `npm run dev:web`（两个终端）
 - 前端 `?embed=1` 为整屏演示模式（截图脚本使用）

@@ -1,7 +1,7 @@
 /**
  * 题库 Mock Provider
  *
- * 【契约】真实环境实现 src/providers/icbc/quizProvider.js 时，
+ * 【契约】真实环境实现 src/providers/prod/quizProvider.js 时，
  * 必须导出与本文件一致的函数签名与返回结构：
  *   getQuestionBank() → [{ id, question, options: string[], answer, explain }]
  */

@@ -1,7 +1,7 @@
 /**
  * 庄园域 Mock Provider
  *
- * 【契约】真实环境实现 src/providers/icbc/manorProvider.js 时，
+ * 【契约】真实环境实现 src/providers/prod/manorProvider.js 时，
  * 必须导出与本文件一致的函数签名与返回结构：
  *   getManorState()  → { name, style, level, exp, expToNext, stageName, coins, diamonds, honorPoints }
  *   getPlants()      → [{ id, species, plot, plotType, linkedProduct:{name,category,code,yieldRate},

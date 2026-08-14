@@ -44,21 +44,21 @@ server/src/data/         数据驱动配置：植物物种/任务定义/题库/�
 - AI 问答：`server/src/data/chatRules.js` 追加一条（keywords 命中 + reply + chips）
 - 成品阶段新增领域（商城/社交/目标）均遵循同一套 `routes → services → providers → data` 扩展模式，可参照 `services/shopService.js` 复制改造
 
-### 2.3 Mock → 真实工行服务替换指南
+### 2.3 Mock → 真实机构服务替换指南
 
 演示环境使用 Mock Provider（`providers/mock/`），生产环境需实现同契约的真实 Provider：
 
 1. 每个 mock provider 文件头部注释即为**契约定义**（函数签名 + 返回结构），实现时必须完全一致
-2. 在 `server/src/providers/icbc/` 下实现同契约文件（对接工行账户/产品/行情/OCR 接口）
-3. 在 `providers/index.js` 的 `PROVIDERS` 注册 `icbc` 模式
-4. 启动时 `DATA_PROVIDER=icbc` 切换，业务层零改动
-5. 鉴权：`middleware/mockAuth.js` 替换为工行统一认证（OAuth2/手机盾）
+2. 在 `server/src/providers/prod/` 下实现同契约文件（对接银行/券商等机构账户、产品、行情与 OCR 接口）
+3. 在 `providers/index.js` 的 `PROVIDERS` 注册 `prod` 模式
+4. 启动时 `DATA_PROVIDER=prod` 切换，业务层零改动
+5. 鉴权：`middleware/mockAuth.js` 替换为统一认证（OAuth2/手机盾）
 6. 前端：`api/http.js` 请求拦截器注入认证 token；生产由 API 网关统一转发，去掉 vite 代理
 
 ### 2.4 庄园场景 → 游戏引擎替换
 
 演示场景为 SVG 手绘风（`web/src/components/manor/ManorScene.vue`）。生产环境按设计方案以
-**Cocos Creator 3.x** 渲染（WebView + JSBridge 集成工行APP）。组件接口保持稳定即可平滑替换：
+**Cocos Creator 3.x** 渲染（独立 App 打包或 WebView + JSBridge 集成）。组件接口保持稳定即可平滑替换：
 
 - Props：`plants`（含 stage/emoji/progress 等后端计算好的展示字段）、`weather`
 - Events：`select(plant)` → 打开植物详情弹层

@@ -1,7 +1,7 @@
 /**
  * 资产域 Mock Provider
  *
- * 【契约】真实环境实现 src/providers/icbc/assetProvider.js 时，
+ * 【契约】真实环境实现 src/providers/prod/assetProvider.js 时，
  * 必须导出与本文件完全一致的函数签名与返回结构：
  *   getPortfolio()      → { totalAssets, totalLiabilities, netWorth, todayChange,
  *                           todayChangePct, categories: [{category, icon, color, amount, ratio}],

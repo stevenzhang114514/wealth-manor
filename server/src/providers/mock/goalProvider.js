@@ -1,7 +1,7 @@
 /**
  * 理财目标域 Mock Provider
  *
- * 【契约】真实环境实现 src/providers/icbc/goalProvider.js 时，
+ * 【契约】真实环境实现 src/providers/prod/goalProvider.js 时，
  * 必须导出与本文件一致的函数签名与返回结构：
  *   getGoals()   → [{ id, goalType, label, params, plan }]（按创建时间倒序）
  *   saveGoal(goal) → 保存并返回带 id 的目标

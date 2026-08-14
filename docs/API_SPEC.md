@@ -20,7 +20,7 @@
 | 40901 | 状态冲突（如重复领取） | 409 |
 | 50000 | 服务端错误 | 500 |
 
-- 鉴权：演示环境由 `mockAuth` 注入演示用户；生产替换为工行统一认证（请求头注入 token）
+- 鉴权：演示环境由 `mockAuth` 注入演示用户；生产替换为统一认证（请求头注入 token）
 - 金额单位统一为**元**；比例/收益率用小数（0.002 = 0.2%）；日期 `YYYY-MM-DD`
 
 ## 2. 资产管理 `/assets`
@@ -34,7 +34,7 @@
   "categories": [
     { "category": "现金及存款", "icon": "💰", "color": "#F5B83D", "amount": 86500, "ratio": 0.0563 }
   ],
-  "liabilities": [{ "id": "l_001", "name": "住房贷款(公积金+商贷)", "amount": 380000, "rate": "3.1%", "institution": "工商银行", "monthlyPayment": 4210 }]
+  "liabilities": [{ "id": "l_001", "name": "住房贷款(公积金+商贷)", "amount": 380000, "rate": "3.1%", "institution": "主发卡行", "monthlyPayment": 4210 }]
 }
 ```
 
@@ -62,7 +62,7 @@
 ### GET /assets/accounts — 账户明细列表
 
 ```json
-[{ "id": "a_001", "name": "工行活期储蓄", "category": "现金及存款", "institution": "工商银行", "balance": 36500, "currency": "CNY", "syncType": "自动" }]
+[{ "id": "a_001", "name": "工资卡活期储蓄", "category": "现金及存款", "institution": "主发卡行", "balance": 36500, "currency": "CNY", "syncType": "自动" }]
 ```
 
 ## 3. 庄园 `/manor`
@@ -89,7 +89,7 @@
 [{
   "id": "p_1001", "species": "sunflower", "speciesName": "向日葵", "speciesEmoji": "🌻",
   "plot": "花园1号地", "plotType": "garden",
-  "linkedProduct": { "name": "工银货币A", "category": "稳健型", "code": "000848", "yieldRate": 1.82 },
+  "linkedProduct": { "name": "货币基金A", "category": "稳健型", "code": "000848", "yieldRate": 1.82 },
   "stage": "mature", "stageLabel": "成熟", "emoji": "🌻", "progress": 1,
   "matureAt": "2026-07-17", "matureDays": 7
 }]

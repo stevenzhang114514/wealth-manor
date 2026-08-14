@@ -4,7 +4,7 @@
  * 业务服务（services/）只依赖本注册表获取数据提供方，不直接感知数据来源。
  * 通过环境变量 DATA_PROVIDER 切换：
  *   - mock：内置模拟数据（默认，演示/开发环境，数据确定性可复现）
- *   - icbc：工行真实接口（待实现）
+ *   - prod：真实机构接口（待实现）
  *
  * 新增一个 Provider 的步骤：
  *   1. 在 server/src/providers/<模式>/ 下新建 <领域>Provider.js；
@@ -23,8 +23,8 @@ const PROVIDERS = {
     goal: () => import('./mock/goalProvider.js'),
     user: () => import('./mock/userProvider.js'),
   },
-  // icbc: {
-  //   asset: () => import('./icbc/assetProvider.js'),
+  // prod: {
+  //   asset: () => import('./prod/assetProvider.js'),
   //   ...
   // },
 }

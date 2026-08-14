@@ -1,7 +1,7 @@
 % !TEX program = xelatex
 % ============================================================
-%  财富庄园 · Wealth Manor —— 企划书（三、产品与服务）
-%  工行APP游戏化智能理财与个人财产管理平台
+%  个人理财系统 · Personal Finance System —— 企划书（三、产品与服务）
+%  游戏化智能理财与个人财产管理平台（财富庄园引擎驱动）
 %  编译：latexmk -xelatex main.tex
 % ============================================================
 \documentclass[12pt,a4paper]{ctexart}
@@ -22,14 +22,14 @@
 \usepackage{float}
 
 % ---------- 颜色 ----------
-\definecolor{icbcred}{HTML}{C8102E}
-\definecolor{manorgreen}{HTML}{4E8C4E}
+\definecolor{icbcred}{HTML}{007AFF}
+\definecolor{manorgreen}{HTML}{34C759}
 \definecolor{rowgray}{HTML}{F5F5F5}
 
 % ---------- 页眉页脚 ----------
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[C]{\small\color{icbcred}财富庄园·Wealth Manor —— 企划书（三、产品与服务）}
+\fancyhead[C]{\small\color{icbcred}个人理财系统 · Personal Finance System —— 企划书（三、产品与服务）}
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -38,8 +38,8 @@
   colorlinks=true,
   linkcolor=icbcred,
   urlcolor=manorgreen,
-  pdftitle={财富庄园企划书——产品与服务},
-  pdfauthor={财富庄园团队}
+  pdftitle={个人理财系统企划书——产品与服务},
+  pdfauthor={个人理财系统团队}
 }
 
 % ---------- 表格行着色 ----------
@@ -86,7 +86,7 @@
 \textbf{维度} & \textbf{说明} \\
 \midrule
 核心用户 & 18--35岁年轻客群：理财新手、基金定投用户、有房有贷的工薪族 \\
-产品定位 & 工行APP内的"理财入口 + 财富仪表盘 + 陪伴式游戏"三位一体模块 \\
+产品定位 & 独立 App 形态的个人理财系统 ——"理财入口 + 财富仪表盘 + 陪伴式游戏"三位一体 \\
 差异化 & 与蚂蚁森林（纯公益）、记账类产品（纯记录）、传统理财专区（纯工具）形成本质区隔 \\
 \bottomrule
 \end{tabular}
@@ -97,8 +97,8 @@
 \subsection{技术架构}
 
 \subsubsection{总体分层架构}
-平台采用"客户端—网关—BFF聚合—微服务—数据层"五层架构，部署于工行金融云，
-与工行现有账户体系、产品中心通过API网关对接：
+平台采用"客户端—网关—BFF聚合—微服务—数据层"五层架构，部署于金融云，
+与银行、券商等机构账户体系及产品中心通过 API 网关对接：
 
 \begin{figure}[htbp]
 \centering
@@ -113,7 +113,7 @@
 ]
 % 客户端层
 \node[layer] (client) at (0,0) {
-  客户端 —— 工行APP（iOS / Android）\\
+  客户端 —— 个人理财系统 App（iOS / Android / H5）\\
   \begin{tikzpicture}
     \node[box] (g1) {游戏引擎\\Cocos Creator 3.x};
     \node[box, right=8mm of g1] (g2) {资产看板\\原生 H5};
@@ -123,7 +123,7 @@
 };
 % 网关层
 \node[layer, below=5mm of client] (gw) {
-  统一 API 网关 —— 鉴权（工行统一认证 + 生物识别）/ 限流 / 熔断 / 国密 TLS
+  统一 API 网关 —— 鉴权（手机号 + 生物识别）/ 限流 / 熔断 / 国密 TLS
 };
 % BFF层
 \node[layer, below=5mm of gw] (bff) {
@@ -179,9 +179,9 @@
 \toprule
 \textbf{领域} & \textbf{生产环境选型} & \textbf{选型理由} \\
 \midrule
-游戏引擎 & Cocos Creator 3.x & 包体增量仅约8MB，支持H5与原生混合渲染，适合2D休闲玩法，可经WebView + JSBridge集成至工行APP \\
+游戏引擎 & Cocos Creator 3.x & 包体增量仅约8MB，支持H5与原生混合渲染，适合2D休闲玩法，支持独立 App 与 H5 双形态发布 \\
 资产看板 & Vue 3 + 原生H5 & 图表交互丰富、跨端复用、与游戏模块同构技术栈 \\
-后端服务 & Spring Cloud 微服务（工行金融云） & 银行级高可用、与行内现有服务治理体系一致 \\
+后端服务 & Spring Cloud 微服务（金融云） & 银行级高可用、与行内现有服务治理体系一致 \\
 AI能力 & 大模型 + 规则引擎双引擎 & 大模型负责对话与生成式建议，规则引擎兜底合规与可解释性 \\
 数据存储 & MySQL + Redis + ES + Kafka & 主数据/缓存排行榜/检索日志/异步解耦各司其职 \\
 安全 & 国密SM2/SM4 + TLS 1.3 & 满足金融行业国密改造要求 \\
@@ -199,8 +199,8 @@ AI能力 & 大模型 + 规则引擎双引擎 & 大模型负责对话与生成式
 \toprule
 \textbf{实体} & \textbf{关键字段} & \textbf{说明} \\
 \midrule
-User（用户） & id, phone, icbc\_uid, risk\_level & 与工行统一用户体系关联，风评等级驱动产品推荐 \\
-AssetAccount（资产账户） & source, account\_type, balance, sync\_type, last\_sync & 多来源资产账户：工行/他行/证券/不动产/其他；支持自动/扫码/OCR/手动四种同步方式 \\
+User（用户） & id, phone, uid, risk\_level & 独立账号体系（支持手机号一键登录），风评等级驱动产品推荐 \\
+AssetAccount（资产账户） & source, account\_type, balance, sync\_type, last\_sync & 多来源资产账户：主发卡行/他行/证券/不动产/其他；支持自动/扫码/OCR/手动四种同步方式 \\
 AssetSnapshot（资产快照） & date, total\_net\_worth, breakdown\_json & 每日打点，支撑趋势图与收益归因 \\
 FinancialGoal（理财目标） & goal\_type, target\_amount, target\_date, linked\_products & 购房/教育/养老等场景化目标 \\
 Manor（庄园） & name, style, level, exp, coins, diamonds & 庄园主档：等级经验、双币种积分 \\
@@ -247,7 +247,7 @@ AI服务 & \texttt{POST /ai/risk-assessment}、\texttt{GET /ai/portfolio-advice}
 \toprule
 \textbf{层面} & \textbf{措施} \\
 \midrule
-身份认证 & 工行APP统一认证 + 生物识别（指纹/人脸） \\
+身份认证 & 独立账号体系 + 生物识别（指纹/人脸） \\
 数据传输 & TLS 1.3 + 国密SM2/SM4 全链路加密 \\
 资产数据 & 仅展示不存储明细，外部资产授权后实时获取、不落库 \\
 OCR处理 & 本地OCR优先（房产证等隐私件），云端OCR加密传输 \\
@@ -348,7 +348,7 @@ OCR处理 & 本地OCR优先（房产证等隐私件），云端OCR加密传输 \
 \toprule
 \textbf{导入方式} & \textbf{适用资产} & \textbf{技术实现} \\
 \midrule
-自动同步 & 工行内存款/理财/基金/贷款/信用卡 & 行内账户体系直连，免操作 \\
+自动同步 & 主发卡行存款/理财/基金/贷款/信用卡 & 发卡行账户体系直连，免操作 \\
 扫码/授权导入 & 他行余额、证券持仓、互联网平台资产 & 银联授权 + 券商截图OCR + 平台开放授权 \\
 拍照OCR识别 & 房产证、车辆登记证、保单 & OCR提取 + 房天下/链家、二手车估值API自动估价 \\
 手动/智能录入 & 海外资产、数字资产、贵重物品 & 手动录入 + 汇率自动换算 \\
@@ -441,9 +441,12 @@ AI配置建议 & 无 & 无 & 基础 & \textbf{双引擎AI} \\
 \subsubsection{演示原型说明}
 为验证产品核心体验，团队已交付一套可运行的\textbf{演示原型}（技术栈：
 Vue 3 + Vite + Pinia + ECharts 前端，Node.js + Express 后端，RESTful API +
-可替换的Mock数据层）。原型以\textbf{375px手机框}模拟工行APP内嵌模块形态，
-覆盖新手引导、庄园主页、资产看板、任务中心、知识答题、装扮商城、好友排行、
-AI助手对话、目标规划与资产导入\textbf{全量核心模块}，全部数据由后端接口
+可替换的Mock数据层）。原型为\textbf{独立产品形态}的「个人理财系统」，
+采用\textbf{Apple 设计语言}（iOS 蓝色系色板、毛玻璃卡片、连续圆角体系、
+分段控件）并适配多端分辨率——手机全屏（安全区适配）、平板居中宽屏、
+桌面 375px 手机框按视口高度自动缩放。覆盖登录、新手引导、庄园主页、
+资产看板、任务中心、知识答题、装扮商城、好友排行、AI助手对话、
+目标规划、资产导入与个人中心\textbf{全量核心模块}，全部数据由后端接口
 实时返回，接口契约与生产架构一一对应，可平滑替换为真实服务。
 
 \subsubsection{演示路径与要点}
@@ -454,20 +457,23 @@ AI助手对话、目标规划与资产导入\textbf{全量核心模块}，全部
 \toprule
 \textbf{步骤} & \textbf{页面} & \textbf{演示要点} \\
 \midrule
-Step 1 & 新手引导 & 首次进入自动触发6步引导；选择中式/西式/日式风格，
+Step 1 & 登录 & 手机号一键登录（演示模式任意11位手机号）；
+        登录守卫保护全站页面 \\
+Step 2 & 新手引导 & 首次进入自动触发6步引导；选择中式/西式/日式风格，
         创建专属庄园，领取新手礼包 \\
-Step 2 & 庄园主页 & 天气=今日行情（晴/雨/彩虹特效）；植物分五阶段生长，
+Step 3 & 庄园主页 & 天气=今日行情（晴/雨/彩虹特效）；植物分五阶段生长，
         点击植物查看关联理财产品的持仓与收益；成熟后"收获"丰收奖励入账 \\
-Step 3 & 资产看板 & 总净资产一屏总览；饼图6类资产配置；30天净资产趋势；
+Step 4 & 资产看板 & 总净资产一屏总览；饼图6类资产配置；30天净资产趋势；
         健康度评分；AI建议卡触发风险预警与"一键优化"；财富树可视化 \\
-Step 4 & 任务中心 & 日常/周/月/成就四类任务；进度条与奖励；点击领取，
+Step 5 & 任务中心 & 日常/周/月/成就四类任务；进度条与奖励；点击领取，
         金币经验实时入账（金币飞入动画） \\
-Step 5 & 知识答题 & 每日5题理财知识；提交即时判分；得分兑换金币/经验，
+Step 6 & 知识答题 & 每日5题理财知识；提交即时判分；得分兑换金币/经验，
         满分获徽章碎片 \\
-Step 6 & 商城与社交 & 装扮商城金币/钻石兑换，装备后庄园实景渲染；
+Step 7 & 商城与社交 & 装扮商城金币/钻石兑换，装备后庄园实景渲染；
         好友互访浇水、月度配置合理性PK排行榜 \\
-Step 7 & AI助手与规划 & AI助手规则引擎问答；购房/教育/养老/应急
+Step 8 & AI助手与规划 & AI助手规则引擎问答；购房/教育/养老/应急
         目标测算（4\%年化复利）与资产四通道导入 \\
+Step 9 & 个人中心 & 头像/风险等级、庄园与资产概览、目标入口、退出登录 \\
 \bottomrule
 \end{tabular}
 \caption{平台演示路径}
@@ -477,15 +483,17 @@ Step 7 & AI助手与规划 & AI助手规则引擎问答；购房/教育/养老/�
 \IfFileExists{img/manor.png}{
   \begin{figure}[H]
   \centering
-  \includegraphics[width=0.31\textwidth]{img/manor.png}\hfill
-  \includegraphics[width=0.31\textwidth]{img/assets.png}\hfill
-  \includegraphics[width=0.31\textwidth]{img/tasks.png}
+  \includegraphics[width=0.23\textwidth]{img/login.png}\hfill
+  \includegraphics[width=0.23\textwidth]{img/manor.png}\hfill
+  \includegraphics[width=0.23\textwidth]{img/assets.png}\hfill
+  \includegraphics[width=0.23\textwidth]{img/tasks.png}
   \\[0.5em]
-  \includegraphics[width=0.31\textwidth]{img/quiz.png}\hfill
-  \includegraphics[width=0.31\textwidth]{img/shop.png}\hfill
-  \includegraphics[width=0.31\textwidth]{img/social.png}
-  \caption{财富庄园演示原型（上排左起：庄园主页、资产看板、任务中心；
-          下排左起：知识答题、装扮商城、好友与排行）}
+  \includegraphics[width=0.23\textwidth]{img/quiz.png}\hfill
+  \includegraphics[width=0.23\textwidth]{img/shop.png}\hfill
+  \includegraphics[width=0.23\textwidth]{img/social.png}\hfill
+  \includegraphics[width=0.23\textwidth]{img/profile.png}
+  \caption{个人理财系统演示原型（上排左起：登录、庄园主页、资产看板、任务中心；
+          下排左起：知识答题、装扮商城、好友与排行、个人中心）}
   \end{figure}
 }{
   \begin{center}
@@ -497,9 +505,10 @@ Step 7 & AI助手与规划 & AI助手规则引擎问答；购房/教育/养老/�
 }
 
 \subsubsection{演示环境与后续演进}
-原型演示环境为本地浏览器（桌面浏览器以手机框呈现，亦可整屏运行）。
-生产演进路径为：Mock数据层 $\rightarrow$ 对接工行真实账户/产品/行情接口
-$\rightarrow$ Cocos Creator 游戏引擎替换SVG场景 $\rightarrow$ 接入行内AI平台
-与大模型 $\rightarrow$ 灰度发布。
+原型演示环境为本地浏览器（桌面浏览器以手机框呈现，手机/平板全屏整屏运行，
+同 WiFi 设备可直接访问）。生产演进路径为：Mock数据层 $\rightarrow$
+对接银行/券商等真实机构账户、产品与行情接口 $\rightarrow$ Cocos Creator
+游戏引擎替换SVG场景 $\rightarrow$ 接入行内AI平台与大模型 $\rightarrow$
+独立 App 打包发布与灰度迭代。
 
 \end{document}

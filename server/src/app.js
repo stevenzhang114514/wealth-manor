@@ -22,7 +22,7 @@ export function createApp() {
     res.json({ code: 0, message: 'ok', data: { status: 'UP', ts: new Date().toISOString() } })
   })
 
-  // 业务接口：统一前缀 + 模拟鉴权（生产替换为工行统一认证）
+  // 业务接口：统一前缀 + 模拟鉴权（生产替换为统一认证）
   app.use(API_PREFIX, mockAuth, apiRouter)
 
   app.use(notFound)

@@ -1,7 +1,7 @@
 /**
  * 任务域 Mock Provider
  *
- * 【契约】真实环境实现 src/providers/icbc/taskProvider.js 时，
+ * 【契约】真实环境实现 src/providers/prod/taskProvider.js 时，
  * 必须导出与本文件一致的函数签名与返回结构：
  *   getTaskState(taskId) → { progress, claimed }
  *   setClaimed(taskId)   → void（幂等：已领取时抛 CONFLICT 由服务层捕获）
