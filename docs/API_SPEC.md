@@ -271,7 +271,42 @@
 
 ### GET /user/profile — 用户资料（同 user 结构，含资产概览）
 
-## 14. 预留接口（设计方案已定义，原型暂未实现）
+## 14. 财富人生模拟器 `/simulator`
+
+### GET /simulator/products?level=R3&cash=20000 — 产品英雄卡目录
+
+```json
+[{ "id": "p_stock", "name": "股票", "emoji": "🐂", "category": "证券", "riskLevel": "R4",
+  "yieldBase": 9.0, "liquidity": { "type": "t1", "months": 0, "label": "T+1 可卖出" },
+  "minAmount": 100, "taxLabel": "卖出缴印花税，红利计税", "termMonths": null,
+  "special": { "label": "涨跌停限制", "desc": "单日涨跌停±10%，波动剧烈" },
+  "earlyRedeem": null, "econ": { "rate": -0.5, "equity": 1.3, "bond": 0 },
+  "lock": { "type": "risk", "reason": "需风评达 R4（您当前 R3）" } }]
+```
+
+`lock` 枚举：`risk`（风评不足）/ `money`（资金不足）/ null（可购买）。13 张产品卡，七维属性数据驱动。
+
+### GET/POST /simulator/risk-assessment — 风评问卷（10题三档）与提交
+
+POST `{ "answers": [{ "id": "q1", "option": 1 }] }` → `{ "score": 30, "level": "R3", "levelName": "平衡型", "maxScore": 50 }`
+
+### GET /simulator/scenarios — 三剧本（校园/职场/家庭，含目标列表与总回合）
+
+### GET /simulator/events — 事件卡目录（经济周期/政策/生活 三类 16 张）
+
+### POST /simulator/session — 开始会话：`{ scenarioId, riskLevel }`
+
+返回初始会话：`{ id, scenarioId, riskLevel, turn, age, cash, income, expense, debt, holdings, econState:{cycle,policy,fx}, goals, totalTurns, eventQueue }`
+
+### POST /simulator/session/:id/advance — 推进一回合（1回合=1个月）
+
+请求：`{ "buys": [{ "productId", "amount" }], "redeems": [{ "index", "amount" }] }`
+
+返回推进后会话（含 `lastEvent`、`lastSettlement`、`log`）；终局时附加 `passport`（财富偏差护照四维复盘）。
+
+规则要点：锁定产品提前赎回按活期计息/退保损失/封闭期拒赎；现金断流 → `gameOver: "liquidity"`；回合数超剧本 → `gameOver: "complete"`。
+
+## 15. 预留接口（设计方案已定义，原型暂未实现）
 
 | 接口 | 说明 |
 |---|---|

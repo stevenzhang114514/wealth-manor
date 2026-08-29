@@ -22,6 +22,29 @@ const MODULES = {
     apis: ['POST /api/v1/user/login'],
     points: ['手机号格式校验', '登录态本地持久化', '路由守卫保护页面'],
   },
+  '/simulator': {
+    icon: '🧭',
+    title: '财富人生模拟器',
+    desc: '回合制核心玩法（1回合=1个月）：金融产品=英雄卡（风险/收益/流动性/税收/期限/特殊情况七维属性），风评定初始阵容，经营家庭财富经历经济周期与政策事件，达成未来现金流目标。',
+    apis: [
+      'GET /api/v1/simulator/products',
+      'POST /api/v1/simulator/risk-assessment',
+      'POST /api/v1/simulator/session',
+      'POST /api/v1/simulator/session/:id/advance',
+    ],
+    points: [
+      '三剧本（校园/职场/家庭）',
+      '事件引擎：周期×政策×生活',
+      '目标倒计时 + 财富偏差护照复盘',
+    ],
+  },
+  '/risk': {
+    icon: '🛡️',
+    title: '风险评估',
+    desc: '10 题风评问卷模拟银行流程，结果（R1-R5）决定模拟器初始可购产品阵容。',
+    apis: ['GET /api/v1/simulator/risk-assessment', 'POST /api/v1/simulator/risk-assessment'],
+    points: ['10题三档评分 → R1~R5', '等级持久化，可重新评估'],
+  },
   '/manor': {
     icon: '🏡',
     title: '财富庄园',

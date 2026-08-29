@@ -110,6 +110,21 @@ const run = async () => {
   r = await get('/user/profile')
   check('资料含风险等级', r.body.data?.riskLevel === 'R3')
 
+  console.log('▶ 模拟器')
+  r = await get('/simulator/products?level=R3&cash=20000')
+  check('产品英雄卡 13 张', r.body.data?.length === 13)
+  r = await get('/simulator/scenarios')
+  check('剧本 3 个', r.body.data?.length === 3)
+  r = await post('/simulator/risk-assessment', { answers: Array.from({ length: 10 }, (_, i) => ({ id: `q${i + 1}`, option: 1 })) })
+  check('风评 3分×10=R3', r.body.data?.level === 'R3')
+  r = await post('/simulator/session', { scenarioId: 'career', riskLevel: 'R3' })
+  check('会话创建', r.body.data?.cash === 20000 && r.body.data?.totalTurns === 60)
+  const sid = r.body.data.id
+  r = await post(`/simulator/session/${sid}/advance`, { buys: [{ productId: 'p_fixed1y', amount: 5000 }] })
+  check('回合推进+购买', r.body.data?.turn === 1 && r.body.data?.holdings?.length === 1)
+  r = await post(`/simulator/session/${sid}/advance`, { redeems: [{ index: 0, amount: 99999 }] })
+  check('提前赎回按活期计息', r.body.data?.holdings?.length === 0)
+
   console.log('▶ 兜底')
   r = await get('/nonexistent')
   check('404 统一包装', r.status === 404 && r.body.code === 40401)

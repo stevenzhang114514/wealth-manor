@@ -11,10 +11,10 @@ const router = useRouter()
 const manor = useManorStore()
 
 const tabs = [
+  { path: '/simulator', icon: '🧭', label: '模拟' },
   { path: '/manor', icon: '🏡', label: '庄园' },
   { path: '/assets', icon: '📊', label: '资产' },
   { path: '/tasks', icon: '📋', label: '任务' },
-  { path: '/quiz', icon: '🎓', label: '答题' },
   { path: '/profile', icon: '👤', label: '我的' },
 ]
 

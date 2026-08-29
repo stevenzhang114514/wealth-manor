@@ -13,6 +13,18 @@ const routes = [
     meta: { icon: '🔐', label: '登录', hideTab: true },
   },
   {
+    path: '/simulator',
+    name: 'simulator',
+    component: () => import('../views/SimulatorView.vue'),
+    meta: { icon: '🧭', label: '模拟' },
+  },
+  {
+    path: '/risk',
+    name: 'risk',
+    component: () => import('../views/RiskView.vue'),
+    meta: { icon: '🛡️', label: '风险评估', hideTab: true },
+  },
+  {
     path: '/manor',
     name: 'manor',
     component: () => import('../views/ManorView.vue'),

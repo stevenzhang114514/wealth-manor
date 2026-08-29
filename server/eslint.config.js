@@ -14,6 +14,7 @@ export default [
         __filename: 'readonly',
         Buffer: 'readonly',
         globalThis: 'readonly',
+        structuredClone: 'readonly',
       },
     },
     rules: {

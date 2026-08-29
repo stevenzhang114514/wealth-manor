@@ -30,6 +30,8 @@ mkdirSync(OUT_DIR, { recursive: true })
 // skip_login：跳过登录守卫（截图不依赖 localStorage）
 const ROUTES = [
   { name: 'login', path: '/login' },
+  { name: 'simulator', path: '/simulator?skip_login=1&demo_risk=R3' },
+  { name: 'risk', path: '/risk?skip_login=1' },
   { name: 'manor', path: '/manor?skip_onboard=1&skip_login=1' },
   { name: 'assets', path: '/assets?skip_login=1' },
   { name: 'tasks', path: '/tasks?skip_login=1' },

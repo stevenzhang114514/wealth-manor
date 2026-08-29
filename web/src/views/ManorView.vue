@@ -24,7 +24,7 @@ const SHORTCUTS = [
   { icon: '🛍️', label: '庄园商城', to: '/shop' },
   { icon: '👥', label: '好友排行', to: '/social' },
   { icon: '🤖', label: 'AI助手', to: '/chat' },
-  { icon: '🎮', label: '新手引导', to: '/onboarding' },
+  { icon: '🎓', label: '知识答题', to: '/quiz' },
 ]
 
 onMounted(async () => {
@@ -90,6 +90,16 @@ const go = (path) => router.push(path)
     <!-- 天气提示 -->
     <div v-if="manor.weather" class="weather-tip">
       {{ manor.weather.icon }} {{ manor.weather.tip }}
+    </div>
+
+    <!-- 财富人生模拟器入口 -->
+    <div class="sim-entry" @click="go('/simulator')">
+      <div class="se-icon">🧭</div>
+      <div class="se-info">
+        <div class="se-title">财富人生模拟器</div>
+        <div class="se-sub">产品即英雄 · 风评定阵容 · 回合制经营你的家庭财富</div>
+      </div>
+      <span class="se-arrow">›</span>
     </div>
 
     <!-- 庄园场景 -->
@@ -173,6 +183,48 @@ const go = (path) => router.push(path)
   font-weight: 600;
   padding: 9px 12px;
   border-radius: 12px;
+}
+
+.sim-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 12px 0;
+  background: linear-gradient(135deg, #007aff, #0055c8);
+  color: #fff;
+  border-radius: var(--r-lg);
+  padding: 12px 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.3);
+  transition: transform 0.12s ease;
+}
+
+.sim-entry:active {
+  transform: scale(0.98);
+}
+
+.se-icon {
+  font-size: 26px;
+}
+
+.se-info {
+  flex: 1;
+}
+
+.se-title {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.se-sub {
+  font-size: 10px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.se-arrow {
+  font-size: 20px;
+  opacity: 0.8;
 }
 
 .shortcut-grid {
