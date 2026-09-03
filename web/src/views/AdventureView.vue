@@ -1,17 +1,17 @@
 <script setup>
 /**
- * 夺金冒险（摸金撤离）——核心玩法
- * 状态机：lobby 选难度/装备 → running 摸金（随机事件+暴击+黑天鹅）→ result 撤离结算/血本无归
- * 收益=游戏金币（100金币=1元现实收入）；达标可撤离，成功加排位分（段位青铜~王者）
- * 3分钟开场：首次进入自动开局简单模式新手局（前3回合无黑天鹅）
+ * 夺金冒险 · 摸金开箱（核心玩法）
+ * 板块建筑（经济作物/粮油/金属/油气）随机游走 × 容器投资方式（股票/债券/基金，双容器可切换）
+ * 开箱 = 随机事件：五档品质掉落（更高品质更值钱概率更低）× 景气度 × 容器波动
+ * 随机暴击 / 黑天鹅 + 双副收益（金币小奖、品质升级）
+ * 达标撤离带出收益（100金币=1元）；四难度排位冲击段位；收益入庄园消费
  */
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getDifficulties, getAdventureGear } from '../api/adventure.js'
+import { getDifficulties, getAdventureContainers, getAdventureSectors } from '../api/adventure.js'
 import { useAdventureStore } from '../stores/adventure.js'
 import { useSimulatorStore } from '../stores/simulator.js'
 import { useManorStore } from '../stores/manor.js'
-
 import { toast, flyCoin } from '../utils/toast.js'
 
 const router = useRouter()
@@ -21,8 +21,10 @@ const manor = useManorStore()
 
 const mode = ref('lobby')
 const difficulties = ref([])
-const gearList = ref([])
-const selectedGear = ref([])
+const containers = ref([])
+const sectors = ref([])
+const selectedContainers = ref([])
+const pendingContainer = ref(null)
 const starting = ref(false)
 
 const CYCLE_LABELS = {
@@ -39,13 +41,20 @@ const goldPct = computed(() => {
   return Math.min(100, Math.round((r.gold / r.targetGold) * 100))
 })
 const canExtract = computed(() => run.value && run.value.gold >= run.value.targetGold)
+const containerInfo = (id) => containers.value.find((c) => c.id === id)
 
 onMounted(async () => {
-  difficulties.value = await getDifficulties()
   const level = sim.riskLevel || 'R3'
-  gearList.value = await getAdventureGear(level)
+  const [diffs, conts, sects] = await Promise.all([
+    getDifficulties(),
+    getAdventureContainers(level),
+    getAdventureSectors(),
+  ])
+  difficulties.value = diffs
+  containers.value = conts
+  sectors.value = sects
 
-  // 3分钟开场：首次进入自动开始新手局（简单模式，平稳开局）；截图可用 ?no_auto=1 停在选难度页
+  // 3分钟开场：首次进入自动开始新手局（截图可用 ?no_auto=1 停在选难度页）
   const noAuto = new URLSearchParams(location.search).get('no_auto') === '1'
   if (!noAuto && !localStorage.getItem('wm-adventure-started')) {
     localStorage.setItem('wm-adventure-started', '1')
@@ -53,43 +62,42 @@ onMounted(async () => {
   }
 })
 
-/** 新手局：默认装备稳健产品，直接进入摸金 */
 const autoStartNewbie = async () => {
-  toast('🎁 新手局开启：攒够 1500 金币即可撤离', 'success')
-  await begin('easy', ['p_mmf', 'p_shortbond'])
+  toast('🎁 新手局开启：进板块、开箱子、攒够 1500 金币即可撤离', 'success')
+  await begin('easy', ['bond'])
 }
 
-const toggleGear = (p) => {
-  if (p.lock) return
-  const idx = selectedGear.value.indexOf(p.id)
-  if (idx >= 0) selectedGear.value.splice(idx, 1)
-  else if (selectedGear.value.length < 4) selectedGear.value.push(p.id)
-  else toast('最多装备 4 张产品卡', 'error')
+const toggleContainer = (c) => {
+  if (c.lock) return
+  const idx = selectedContainers.value.indexOf(c.id)
+  if (idx >= 0) selectedContainers.value.splice(idx, 1)
+  else if (selectedContainers.value.length < 2) selectedContainers.value.push(c.id)
+  else toast('最多携带 2 个容器（投资方式）', 'error')
 }
 
-const begin = async (difficultyId, presetGear = null) => {
+const begin = async (difficultyId, preset = null) => {
   starting.value = true
   try {
-    const gear = presetGear ?? selectedGear.value
-    if (!gear.length) {
-      toast('请至少选择 1 张产品卡作为摸金装备', 'error')
+    const conts = preset ?? selectedContainers.value
+    if (!conts.length) {
+      toast('请至少选择 1 个容器（投资方式）', 'error')
       return
     }
-    await adv.begin(difficultyId, gear, sim.riskLevel || 'R3')
+    await adv.begin(difficultyId, conts, sim.riskLevel || 'R3')
+    pendingContainer.value = run.value.containers[0] ?? null
     mode.value = 'running'
   } finally {
     starting.value = false
   }
 }
 
-/** 继续摸金 */
-const keepDigging = async () => {
+/** 开箱 */
+const dig = async () => {
   if (adv.loading || run.value.status !== 'playing') return
-  await adv.step()
+  await adv.step(pendingContainer.value ?? undefined)
   if (run.value.status === 'busted') mode.value = 'result'
 }
 
-/** 撤离 */
 const extract = async () => {
   if (!canExtract.value || adv.loading) return
   const res = await adv.extract()
@@ -108,6 +116,8 @@ const again = () => {
 }
 
 const goManor = () => router.push('/manor')
+
+const QUALITY_STYLE = (q) => ({ borderColor: q?.color, background: (q?.color || '#999') + '14' })
 </script>
 
 <template>
@@ -115,8 +125,8 @@ const goManor = () => router.push('/manor')
     <!-- ============ 大厅 ============ -->
     <template v-if="mode === 'lobby'">
       <div class="adv-hero">
-        <div class="ah-title">⛏️ 夺金冒险</div>
-        <div class="ah-sub">运气 × 策略：摸金攒钱，达标撤离，带出收益</div>
+        <div class="ah-title">⛏️ 夺金冒险 · 摸金开箱</div>
+        <div class="ah-sub">进板块 → 开容器 → 品质掉落：更高品质更值钱，但概率更低</div>
         <div class="ah-rank">
           <span class="wm-chip">🏆 排位分 {{ adv.rankScore }}</span>
           <span class="wm-chip">100金币 = 1元现实收入</span>
@@ -141,32 +151,57 @@ const goManor = () => router.push('/manor')
         <button class="wm-btn dc-btn" :disabled="starting" @click="begin(d.id)">⛏️ 出发摸金</button>
       </div>
 
-      <!-- 装备选择 -->
+      <!-- 容器选择（投资方式） -->
       <div class="wm-card">
-        <div class="card-title">🎒 摸金装备（最多4张 · 风评解锁）</div>
-        <div class="gear-grid">
+        <div class="card-title">📦 容器（投资方式）· 最多2个 · 开箱前可切换</div>
+        <div class="container-grid">
           <div
-            v-for="p in gearList"
-            :key="p.id"
-            class="gear-item"
-            :class="{ picked: selectedGear.includes(p.id), locked: !!p.lock }"
-            @click="toggleGear(p)"
+            v-for="c in containers"
+            :key="c.id"
+            class="container-item"
+            :class="{ picked: selectedContainers.includes(c.id), locked: !!c.lock }"
+            @click="toggleContainer(c)"
           >
-            <span class="g-emoji">{{ p.emoji }}</span>
-            <span class="g-name">{{ p.name }}</span>
-            <span class="g-risk" :style="{ color: p.lock ? '#999' : '#007aff' }">{{
-              p.riskLevel
-            }}</span>
+            <span class="c-emoji">{{ c.emoji }}</span>
+            <span class="c-name">{{ c.name }}</span>
+            <span class="c-attrs">
+              波动×{{ c.volFactor }} · 暴击{{ c.critDelta >= 0 ? '+' : ''
+              }}{{ Math.round(c.critDelta * 100) }}% · 副收益{{ Math.round(c.sideChance * 100) }}% ·
+              升级{{ Math.round(c.upgradeChance * 100) }}%
+            </span>
+            <span v-if="c.lock" class="c-lock">🔒 {{ c.lock.reason }}</span>
           </div>
         </div>
-        <div class="gear-hint">🔒 完成「装备解锁评估」可解锁更高风险产品卡（可选）</div>
+        <div class="gear-hint">🔒 完成「装备解锁评估」可解锁更高风险容器（可选）</div>
         <button class="wm-btn ghost gear-risk-btn" @click="router.push('/risk')">
           🛡️ 装备解锁评估
         </button>
       </div>
+
+      <!-- 板块图鉴 -->
+      <div class="wm-card">
+        <div class="card-title">🗺️ 板块图鉴（随机游走，掉落物一览）</div>
+        <div v-for="s in sectors" :key="s.id" class="sector-row">
+          <span class="s-icon">{{ s.icon }}</span>
+          <div class="s-info">
+            <div class="s-name" :style="{ color: s.color }">{{ s.name }}</div>
+            <div class="s-desc">{{ s.desc }}</div>
+          </div>
+          <div class="s-items">
+            <span
+              v-for="it in s.items"
+              :key="it.id"
+              class="s-item"
+              :title="`${it.name}（基础价值${it.baseValue}）`"
+            >
+              {{ it.emoji }}
+            </span>
+          </div>
+        </div>
+      </div>
     </template>
 
-    <!-- ============ 摸金中 ============ -->
+    <!-- ============ 摸金开箱中 ============ -->
     <template v-else-if="mode === 'running' && run">
       <!-- 顶部：金币与目标 -->
       <div class="run-head">
@@ -174,7 +209,6 @@ const goManor = () => router.push('/manor')
         <div class="rh-label">当前金币 / 目标 {{ run.targetGold }}</div>
         <div class="rh-progress">
           <div class="rh-fill" :style="{ width: goldPct + '%' }"></div>
-          <span class="rh-mark" :style="{ left: '100%' }"></span>
         </div>
         <div class="rh-meta">
           <span class="wm-chip">{{ CYCLE_LABELS[run.econCycle] }}</span>
@@ -183,44 +217,75 @@ const goManor = () => router.push('/manor')
         </div>
       </div>
 
-      <!-- 事件卡 -->
+      <!-- 板块入口（随机游走） -->
+      <div
+        v-if="run.lastStep"
+        class="sector-entry"
+        :style="{ borderColor: run.lastStep.sector.color }"
+      >
+        <div class="se-head">
+          <span class="se-icon">{{ run.lastStep.sector.icon }}</span>
+          <span class="se-name">你走进了「{{ run.lastStep.sector.name }}」板块</span>
+          <span class="se-mood">
+            {{ run.lastStep.mood.icon }} {{ run.lastStep.mood.label }}
+            <em :class="run.lastStep.mood.factor >= 0 ? 'up' : 'down'">
+              {{ run.lastStep.mood.factor >= 0 ? '+' : '' }}{{ run.lastStep.mood.factor }}%
+            </em>
+          </span>
+        </div>
+        <div class="se-loot-preview">
+          可能掉落：
+          <span
+            v-for="it in sectors.find((s) => s.id === run.lastStep.sector.id)?.items || []"
+            :key="it.id"
+            class="se-item"
+          >
+            {{ it.emoji }}{{ it.name }}
+          </span>
+        </div>
+      </div>
+
+      <!-- 容器切换条 -->
+      <div class="container-bar">
+        <span class="cb-label">📦 开箱容器：</span>
+        <button
+          v-for="cid in run.containers"
+          :key="cid"
+          class="cb-chip"
+          :class="{ active: pendingContainer === cid }"
+          @click="pendingContainer = cid"
+        >
+          {{ containerInfo(cid)?.emoji }} {{ containerInfo(cid)?.name }}
+        </button>
+      </div>
+
+      <!-- 开箱结果（品质掉落） -->
       <div
         v-if="run.lastStep"
         :key="run.turn"
-        class="event-banner"
+        class="loot-card"
+        :style="QUALITY_STYLE(run.lastStep.quality)"
         :class="{ swan: run.lastStep.swan, crit: run.lastStep.crit }"
       >
-        <div class="eb-icon">{{ run.lastStep.event.icon }}</div>
-        <div class="eb-body">
-          <div class="eb-title">
-            {{ run.lastStep.event.title }}
-            <span v-if="run.lastStep.crit" class="eb-badge crit-badge">💥 暴击!</span>
-            <span v-if="run.lastStep.swan" class="eb-badge swan-badge">🦢 黑天鹅!</span>
-          </div>
-          <div class="eb-desc">{{ run.lastStep.event.desc }}</div>
+        <div class="lc-head">
+          <span class="lc-quality" :style="{ color: run.lastStep.quality.color }">
+            {{ run.lastStep.quality.emoji }} {{ run.lastStep.quality.name }}
+            <em v-if="run.lastStep.upgraded" class="lc-upgraded">⬆️ 品质升级!</em>
+          </span>
+          <span v-if="run.lastStep.crit" class="lc-badge crit-badge"
+            >💥 暴击 ×{{ run.critRange[1] }}</span
+          >
+          <span v-if="run.lastStep.swan" class="lc-badge swan-badge">🦢 黑天鹅</span>
         </div>
-      </div>
-
-      <!-- 收益滚动 -->
-      <div v-if="run.lastStep?.gains?.length" class="wm-card">
-        <div class="card-title">📈 本步收益</div>
-        <div v-for="g in run.lastStep.gains" :key="g.productId" class="gain-row">
-          <span>{{ g.emoji }} {{ g.name }}</span>
-          <span :class="g.gain >= 0 ? 'up' : 'down'">
-            {{ g.rate >= 0 ? '+' : '' }}{{ g.rate }}% · {{ g.gain >= 0 ? '+' : ''
-            }}{{ g.gain }} 金币
+        <div class="lc-loot">
+          <span class="lc-emoji">{{ run.lastStep.loot.emoji }}</span>
+          <span class="lc-name">{{ run.lastStep.loot.name }}</span>
+          <span class="lc-value" :class="run.lastStep.value >= 0 ? 'up' : 'down'">
+            {{ run.lastStep.value >= 0 ? '+' : '' }}{{ run.lastStep.value }} 金币
           </span>
         </div>
-      </div>
-
-      <!-- 装备列表 -->
-      <div class="wm-card">
-        <div class="card-title">🎒 摸金装备</div>
-        <div class="run-gear">
-          <span v-for="pid in run.gear" :key="pid" class="rg-chip">
-            {{ gearList.find((p) => p.id === pid)?.emoji }}
-            {{ gearList.find((p) => p.id === pid)?.name }}
-          </span>
+        <div v-if="run.lastStep.sideIncome" class="lc-side">
+          🎁 副收益：摸到边角料 +{{ run.lastStep.sideIncome }} 金币
         </div>
       </div>
 
@@ -229,9 +294,9 @@ const goManor = () => router.push('/manor')
         <button
           class="wm-btn dig-btn"
           :disabled="adv.loading || run.status !== 'playing'"
-          @click="keepDigging"
+          @click="dig"
         >
-          ⛏️ 继续摸金
+          ⛏️ 开箱
         </button>
         <button
           class="wm-btn out-btn"
@@ -247,18 +312,18 @@ const goManor = () => router.push('/manor')
         {{ Math.max(0, run.targetGold - Math.round(run.gold)) }} 金币即可撤离——贪心还是落袋为安？
       </div>
       <div v-else class="run-tip ready-tip">
-        ✅ 已达目标！可以撤离带出收益（继续摸金收益更高，风险也更高）
+        ✅ 已达目标！可以撤离带出收益（继续开箱收益更高，风险也更高）
       </div>
 
-      <!-- 事件日志 -->
+      <!-- 掉落日志 -->
       <div class="log-box">
         <div
-          v-for="(l, i) in run.log.slice(-4)"
+          v-for="(l, i) in run.log.slice(-5)"
           :key="i"
           class="log-line"
           :class="{ swan: l.swan, crit: l.crit }"
         >
-          {{ l.icon }} {{ l.title }} · {{ Math.round(l.gold) }} 金币
+          {{ l.text }}
         </div>
       </div>
     </template>
@@ -297,8 +362,7 @@ const goManor = () => router.push('/manor')
           class="review-line"
           :class="{ swan: l.swan, crit: l.crit }"
         >
-          <span>{{ l.icon }} {{ l.title }}</span>
-          <span>{{ Math.round(l.gold) }} 金币</span>
+          <span>{{ l.text }}</span>
         </div>
       </div>
 
@@ -402,18 +466,18 @@ const goManor = () => router.push('/manor')
   padding: 11px;
 }
 
-/* 装备 */
-.gear-grid {
+/* 容器选择 */
+.container-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 8px;
 }
 
-.gear-item {
+.container-item {
   background: #f7f8fa;
   border-radius: 12px;
-  padding: 10px 4px;
+  padding: 10px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -421,30 +485,36 @@ const goManor = () => router.push('/manor')
   cursor: pointer;
   border: 1.5px solid transparent;
   transition: all 0.15s ease;
+  text-align: center;
 }
 
-.gear-item.picked {
+.container-item.picked {
   border-color: var(--ios-blue);
   background: #eef4ff;
 }
 
-.gear-item.locked {
+.container-item.locked {
   opacity: 0.5;
 }
 
-.g-emoji {
-  font-size: 20px;
+.c-emoji {
+  font-size: 22px;
 }
 
-.g-name {
-  font-size: 9px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.g-risk {
-  font-size: 10px;
+.c-name {
+  font-size: 11.5px;
   font-weight: 800;
+}
+
+.c-attrs {
+  font-size: 8.5px;
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+
+.c-lock {
+  font-size: 8px;
+  color: var(--text-sub);
 }
 
 .gear-hint {
@@ -457,7 +527,48 @@ const goManor = () => router.push('/manor')
   width: 100%;
 }
 
-/* 摸金中 */
+/* 板块图鉴 */
+.sector-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 0.5px solid var(--separator);
+}
+
+.sector-row:last-child {
+  border-bottom: none;
+}
+
+.s-icon {
+  font-size: 22px;
+}
+
+.s-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.s-name {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.s-desc {
+  font-size: 9.5px;
+  color: var(--text-sub);
+}
+
+.s-items {
+  display: flex;
+  gap: 4px;
+}
+
+.s-item {
+  font-size: 16px;
+}
+
+/* 摸金开箱中 */
 .run-head {
   background: linear-gradient(180deg, #2c2c33, #1c1c21);
   color: #fff;
@@ -479,7 +590,6 @@ const goManor = () => router.push('/manor')
 }
 
 .rh-progress {
-  position: relative;
   height: 10px;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 999px;
@@ -500,27 +610,106 @@ const goManor = () => router.push('/manor')
   justify-content: center;
 }
 
-.event-banner {
+/* 板块入口 */
+.sector-entry {
+  border: 1.5px solid;
+  border-radius: var(--r-lg);
+  background: #fff;
+  padding: 12px;
+  margin: 10px 12px 0;
+  box-shadow: var(--shadow-card);
+  animation: ebIn 0.35s ease both;
+}
+
+.se-head {
   display: flex;
-  gap: 10px;
-  background: linear-gradient(135deg, #fff6dd, #ffe9b0);
-  border: 1px solid #f2dc9a;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.se-icon {
+  font-size: 20px;
+}
+
+.se-name {
+  font-size: 13px;
+  font-weight: 800;
+  flex: 1;
+}
+
+.se-mood {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.se-mood em {
+  font-style: normal;
+  margin-left: 3px;
+}
+
+.se-loot-preview {
+  font-size: 10px;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.se-item {
+  background: #f4f6f8;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* 容器切换条 */
+.container-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 10px 12px 0;
+}
+
+.cb-label {
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.cb-chip {
+  flex: 1;
+  border: 1.5px solid #e0e4e8;
+  background: #fff;
+  border-radius: 999px;
+  padding: 7px 0;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-main);
+}
+
+.cb-chip.active {
+  border-color: var(--ios-blue);
+  background: #eef4ff;
+  color: var(--ios-blue);
+}
+
+/* 开箱结果卡 */
+.loot-card {
+  border: 2px solid;
   border-radius: var(--r-lg);
   padding: 13px;
   margin: 10px 12px 0;
   animation: ebIn 0.4s ease both;
 }
 
-.event-banner.swan {
-  background: linear-gradient(135deg, #ffebec, #ffd9db);
-  border-color: #f5b5b8;
-  animation: shake 0.5s ease;
+.loot-card.crit {
+  animation: pulse 0.6s ease;
 }
 
-.event-banner.crit {
-  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
-  border-color: #ffb74d;
-  animation: pulse 0.6s ease;
+.loot-card.swan {
+  animation: shake 0.5s ease;
 }
 
 @keyframes ebIn {
@@ -559,19 +748,27 @@ const goManor = () => router.push('/manor')
   }
 }
 
-.eb-icon {
-  font-size: 24px;
+.lc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
-.eb-title {
+.lc-quality {
   font-size: 13px;
   font-weight: 800;
 }
 
-.eb-badge {
+.lc-upgraded {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--ios-indigo);
+}
+
+.lc-badge {
   font-size: 10px;
   font-weight: 800;
-  margin-left: 6px;
 }
 
 .crit-badge {
@@ -582,34 +779,37 @@ const goManor = () => router.push('/manor')
   color: #c62828;
 }
 
-.eb-desc {
+.lc-loot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lc-emoji {
+  font-size: 30px;
+}
+
+.lc-name {
+  font-size: 15px;
+  font-weight: 800;
+  flex: 1;
+}
+
+.lc-value {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.lc-side {
+  margin-top: 8px;
   font-size: 10.5px;
-  color: #6d5b3a;
-  margin-top: 3px;
-  line-height: 1.5;
+  color: #8a6d1f;
+  background: #fff6dd;
+  border-radius: 8px;
+  padding: 5px 9px;
 }
 
-.gain-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  margin-bottom: 5px;
-}
-
-.run-gear {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.rg-chip {
-  font-size: 10px;
-  font-weight: 700;
-  background: #f2f3f5;
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
+/* 操作 */
 .run-actions {
   display: flex;
   gap: 10px;

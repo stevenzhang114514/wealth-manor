@@ -17,17 +17,17 @@ const runs = new Map()
 /** 排位档案（累计排位分，内存态） */
 const rankProfile = { totalScore: 0, tier: 'bronze' }
 
-export function createRun(difficultyId, gear, riskLevel) {
-  const run = engine.createRun(difficultyId, gear, riskLevel)
+export function createRun(difficultyId, containers, riskLevel) {
+  const run = engine.createRun(difficultyId, containers, riskLevel)
   if (!run) return null
   runs.set(run.id, run)
   return structuredClone(run)
 }
 
-export function advanceRun(id) {
+export function advanceRun(id, decision) {
   const run = runs.get(id)
   if (!run) return null
-  const next = engine.advanceStep(run)
+  const next = engine.advanceStep(run, decision ?? {})
   runs.set(id, next)
   return structuredClone(next)
 }

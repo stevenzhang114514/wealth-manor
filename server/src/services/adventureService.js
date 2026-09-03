@@ -1,47 +1,66 @@
 /**
- * 夺金冒险引擎（业务逻辑层，纯函数可单测）
- * 摸金撤离玩法：随机事件 + 产品历史收益分布抽样（含随机暴击与黑天鹅）
- * 收益以游戏金币计，100金币 = 1元现实收入（换算展示）
+ * 夺金冒险引擎 v2（业务逻辑层，纯函数可单测）
+ * 摸金开箱玩法：
+ *   板块建筑（经济作物/粮油/金属/油气）随机游走，每一步进入一个板块
+ *   容器 = 投资方式（股票/债券/基金，开局3选2，开箱前可切换）
+ *   开容器 = 随机事件：五档品质掉落（更高品质更值钱概率更低）× 板块景气度 × 容器波动
+ *   随机暴击 / 市场黑天鹅 + 双副收益（金币小奖、品质升级）
  * 每局达到目标数额即可撤离带出收益；金币清零或超时未达标 → 血本无归
  */
 import { DIFFICULTIES, RANKS, GOLD_TO_CNY } from '../data/adventures.js'
-import { ADVENTURE_EVENTS, PRODUCT_GROUPS } from '../data/adventureEvents.js'
-import { PRODUCTS, RISK_RANK } from '../data/products.js'
-import { createSeededRandom, shuffle } from '../utils/random.js'
-import { eligibleProducts } from './simulatorService.js'
-
-/** 冒险局装备资格（仅风评门槛，无起投资金门槛） */
-export function eligibleGear(level) {
-  return eligibleProducts(level, 1e12).map((p) => ({
-    ...p,
-    lock: p.lock?.type === 'risk' ? p.lock : null,
-  }))
-}
+import { SECTORS } from '../data/sectors.js'
+import { CONTAINERS } from '../data/containers.js'
+import { QUALITIES } from '../data/qualities.js'
+import { RISK_RANK } from '../data/products.js'
+import { createSeededRandom } from '../utils/random.js'
 
 /** 经济周期对收益分布均值的条件调整（年化百分点） */
 export const CYCLE_MEAN_SHIFT = { expansion: 2, overheating: 0.5, recession: -3, recovery: 1 }
 
-/** 收益抽样（纯函数）：周期条件均值 + Box-Muller 正态抽样 → 月收益率% */
-export function sampleReturn(product, econCycle, meanShift = 0, rng = Math.random) {
-  const dist = product.dist ?? { mean: product.yieldBase, vol: 2 }
-  const cycleShift = CYCLE_MEAN_SHIFT[econCycle] ?? 0
-  const mean = dist.mean + cycleShift + meanShift
-  const vol = dist.vol
-  const u1 = Math.max(rng(), 1e-9)
-  const u2 = rng()
-  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2)
-  return Math.max(-30, Math.min(30, (mean + vol * z) / 12))
+/** 品质掉落 roll（纯函数）：按累计概率表 */
+export function rollQuality(rng = Math.random) {
+  const p = rng()
+  let acc = 0
+  for (const q of QUALITIES) {
+    acc += q.probability
+    if (p <= acc) return { ...q }
+  }
+  return { ...QUALITIES[0] }
 }
 
-/** 创建一局（纯函数，seed 可复现） */
-export function createRun(difficultyId, gearIds, riskLevel, seed = 20260813) {
+/** 品质升一档（纯函数）：传说封顶 */
+export function upgradeQuality(q) {
+  const idx = QUALITIES.findIndex((x) => x.id === q.id)
+  return { ...(QUALITIES[Math.min(idx + 1, QUALITIES.length - 1)] ?? q) }
+}
+
+/** 板块景气度（纯函数）：周期加成 + 随机波动 → {label, factor(%点)} */
+export function sectorMood(sector, econCycle, rng = Math.random) {
+  const bias = sector.cycleBias[econCycle] ?? 0
+  const factor = bias + (rng() - 0.5) * 1.6
+  const label = factor > 0.8 ? '景气' : factor < -0.8 ? '低迷' : '平稳'
+  const icon = factor > 0.8 ? '🔥' : factor < -0.8 ? '❄️' : '🌤️'
+  return { label, icon, factor: +factor.toFixed(2) }
+}
+
+/** 容器资格（纯函数）：风评门槛过滤 */
+export function eligibleContainers(level) {
+  const rank = RISK_RANK[level] ?? 1
+  return CONTAINERS.map((c) => ({
+    ...c,
+    lock: RISK_RANK[c.unlockRisk] > rank ? { type: 'risk', reason: `需风评达 ${c.unlockRisk}（您当前 ${level}）` } : null,
+  }))
+}
+
+/** 创建一局（纯函数，seed 可复现）：装备=双容器 */
+export function createRun(difficultyId, containerIds, riskLevel, seed = 20260813) {
   const diff = DIFFICULTIES.find((d) => d.id === difficultyId)
   if (!diff) return null
   const rand = createSeededRandom(seed)
   const rank = RISK_RANK[riskLevel] ?? 1
-  const gear = (gearIds ?? []).filter((id) => {
-    const p = PRODUCTS.find((x) => x.id === id)
-    return p && RISK_RANK[p.riskLevel] <= rank
+  const containers = (containerIds ?? []).filter((id) => {
+    const c = CONTAINERS.find((x) => x.id === id)
+    return c && RISK_RANK[c.unlockRisk] <= rank
   })
   return {
     id: `r_${Date.now()}_${Math.floor(rand() * 10000)}`,
@@ -56,9 +75,9 @@ export function createRun(difficultyId, gearIds, riskLevel, seed = 20260813) {
     critRange: diff.critRange,
     rankFactor: diff.rankFactor,
     noviceProtect: diff.noviceProtect,
-    gear,
+    containers,
+    currentContainer: containers[0] ?? null,
     econCycle: 'recovery',
-    eventQueue: shuffle([...ADVENTURE_EVENTS], rand),
     log: [],
     lastStep: null,
     critCount: 0,
@@ -69,67 +88,86 @@ export function createRun(difficultyId, gearIds, riskLevel, seed = 20260813) {
 }
 
 /**
- * 摸金一步（纯函数）：抽事件 → 装备产品按分布抽样计收益（含暴击/黑天鹅）→ 现金结算
- * 新手保护回合内黑天鹅事件替换为平稳事件
+ * 开箱一步（纯函数）：随机进入板块 → 用指定容器开箱 → 品质掉落 → 暴击/黑天鹅 → 双副收益
+ * decision: { containerId }（可选，不传用当前容器）
  */
-export function advanceStep(runInput) {
+export function advanceStep(runInput, decision = {}) {
   const r = structuredClone(runInput)
   if (r.status !== 'playing') return r
-  // 每步确定性随机源（种子=回合数），保证可复现
   const rng = createSeededRandom(r.turn * 7919 + 13)
 
-  let event = r.eventQueue[r.turn % r.eventQueue.length]
-  // 事件效果在下方按字段应用（cycle/cashChange/productFilter/meanShift）
+  // 切换容器（校验在装备列表内）
+  if (decision.containerId && r.containers.includes(decision.containerId)) {
+    r.currentContainer = decision.containerId
+  }
+  const container = CONTAINERS.find((c) => c.id === r.currentContainer) ?? CONTAINERS[0]
 
-  // 新手保护：黑天鹅替换为平稳事件
-  if (r.turn < r.noviceProtect && event.type === 'blackswan') {
-    event = { id: 'ae_protect', type: 'neutral', icon: '🛡️', title: '新手保护期', desc: '平稳开局：工资到账 +100 金币，先熟悉摸金节奏', effect: { cashChange: 100 } }
+  // 1. 随机游走进入板块
+  const sector = SECTORS[Math.floor(rng() * SECTORS.length)]
+
+  // 2. 板块景气度
+  const mood = sectorMood(sector, r.econCycle, rng)
+
+  // 3. 品质掉落（新手保护期传说/珍品照常，黑天鹅保护见后）
+  let quality = rollQuality(rng)
+
+  // 4. 副收益二：品质升级（先于价值计算）
+  let upgraded = false
+  if (rng() < container.upgradeChance && quality.id !== 'legend') {
+    quality = upgradeQuality(quality)
+    upgraded = true
   }
 
-  if (event.effect?.cycle) r.econCycle = event.effect.cycle
-  if (event.effect?.cashChange) r.gold += event.effect.cashChange
+  // 5. 掉落物与价值 = 基础值 × 品质倍数 × 景气系数 × 容器波动噪声
+  const loot = sector.items[Math.floor(rng() * sector.items.length)]
+  const noise = boxMuller(rng) * 0.35 * container.volFactor
+  let value = loot.baseValue * quality.multiplier * (1 + mood.factor / 100) * (1 + noise)
+  value = Math.round(value)
 
-  const step = { event: { ...event }, gains: [], crit: false, swan: false }
-
-  // 装备产品等权重分配收益（历史收益分布抽样 + 暴击/黑天鹅判定）
-  if (r.gear.length > 0 && r.gold > 0) {
-    const perGear = r.gold / r.gear.length
-    let totalGain = 0
-    for (const pid of r.gear) {
-      const p = PRODUCTS.find((x) => x.id === pid)
-      if (!p) continue
-      const fxGroup = event.effect?.productFilter
-      const shift = fxGroup
-        ? (PRODUCT_GROUPS[fxGroup]?.includes(pid) ? event.effect.meanShift ?? 0 : 0)
-        : (event.effect?.meanShift ?? 0)
-      let rate = sampleReturn(p, r.econCycle, shift, rng)
-      if (rng() < r.blackSwanPct) {
-        rate = -Math.abs(rate) * (1.2 + rng())
-        step.swan = true
-        r.swanCount += 1
-      } else if (rng() < 0.15) {
-        const mult = r.critRange[0] + rng() * (r.critRange[1] - r.critRange[0])
-        rate = rate * mult
-        step.crit = true
-        r.critCount += 1
-      }
-      const gain = (perGear * rate) / 100
-      totalGain += gain
-      step.gains.push({ productId: pid, name: p.name, emoji: p.emoji, rate: +rate.toFixed(2), gain: Math.round(gain) })
-    }
-    r.gold += totalGain
+  // 6. 暴击 / 黑天鹅判定（新手保护期黑天鹅免疫）
+  const isProtected = r.turn < r.noviceProtect
+  let crit = false
+  let swan = false
+  if (!isProtected && rng() < r.blackSwanPct) {
+    value = -Math.round(Math.abs(value) * (1.2 + rng()))
+    swan = true
+    r.swanCount += 1
+  } else if (rng() < 0.15 + container.critDelta) {
+    const mult = r.critRange[0] + rng() * (r.critRange[1] - r.critRange[0])
+    value = Math.round(value * mult)
+    crit = true
+    r.critCount += 1
   }
 
+  // 7. 副收益一：金币小奖
+  let sideIncome = 0
+  if (rng() < container.sideChance) {
+    sideIncome = Math.round(container.sideRange[0] + rng() * (container.sideRange[1] - container.sideRange[0]))
+  }
+
+  r.gold += value + sideIncome
   r.gold = Math.round(r.gold)
   r.turn += 1
-  r.lastStep = step
+  r.lastStep = {
+    sector: { id: sector.id, name: sector.name, icon: sector.icon, color: sector.color },
+    mood,
+    container: { id: container.id, name: container.name, emoji: container.emoji },
+    quality: { id: quality.id, name: quality.name, emoji: quality.emoji, color: quality.color, multiplier: quality.multiplier },
+    loot: { ...loot },
+    value,
+    crit,
+    swan,
+    sideIncome,
+    upgraded,
+  }
   r.log.push({
     turn: r.turn,
-    icon: step.event.icon,
-    title: step.event.title,
-    text: step.event.desc,
-    crit: step.crit,
-    swan: step.swan,
+    icon: loot.emoji,
+    title: `${sector.icon}${sector.name} · ${container.emoji}${container.name}`,
+    text: `${quality.emoji}${quality.name}「${loot.name}」 ${value >= 0 ? '+' : ''}${value} 金币${crit ? '（💥暴击）' : ''}${swan ? '（🦢黑天鹅）' : ''}${sideIncome ? `（副收益+${sideIncome}）` : ''}`,
+    quality: quality.id,
+    crit,
+    swan,
     gold: r.gold,
   })
 
@@ -138,7 +176,7 @@ export function advanceStep(runInput) {
     r.log.push({ turn: r.turn, icon: '💀', title: '血本无归', text: '金币清零！冒险失败，本局收益归零', gold: 0 })
   } else if (r.turn >= r.maxTurns && r.gold < r.targetGold) {
     r.status = 'busted'
-    r.log.push({ turn: r.turn, icon: '⏰', title: '超时未达标', text: `回合耗尽仍差 ¥${Math.round(r.targetGold - r.gold)} 金币，本局失败`, gold: r.gold })
+    r.log.push({ turn: r.turn, icon: '⏰', title: '超时未达标', text: `回合耗尽仍差 ${Math.round(r.targetGold - r.gold)} 金币，本局失败`, gold: r.gold })
   }
   return r
 }
@@ -169,4 +207,11 @@ export function tierOf(totalScore) {
   return list.find((t) => totalScore >= t.min) ?? RANKS[0]
 }
 
-export { GOLD_TO_CNY, DIFFICULTIES, RANKS }
+/** Box-Muller 标准正态抽样（内部工具） */
+function boxMuller(rng) {
+  const u1 = Math.max(rng(), 1e-9)
+  const u2 = rng()
+  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2)
+}
+
+export { GOLD_TO_CNY, DIFFICULTIES, RANKS, SECTORS, CONTAINERS, QUALITIES }

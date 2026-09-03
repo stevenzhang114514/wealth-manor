@@ -1,57 +1,107 @@
 /**
- * 夺金冒险引擎单元测试（node:test）
+ * 夺金冒险引擎 v2（摸金开箱）单元测试（node:test）
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  sampleReturn,
+  rollQuality,
+  upgradeQuality,
+  sectorMood,
+  eligibleContainers,
   createRun,
   advanceStep,
   tryExtract,
   tierOf,
-  eligibleGear,
   GOLD_TO_CNY,
+  QUALITIES,
+  SECTORS,
 } from './adventureService.js'
-import { PRODUCTS } from '../data/products.js'
 import { createSeededRandom } from '../utils/random.js'
 
-test('收益抽样：分布均值在合理范围（大样本统计）', () => {
-  const etf = PRODUCTS.find((p) => p.id === 'p_etf')
-  const rng = createSeededRandom(42)
-  let sum = 0
-  const N = 2000
-  for (let i = 0; i < N; i++) sum += sampleReturn(etf, 'recovery', 0, rng)
-  const avg = sum / N
-  // 复苏期 ETF 月均 ≈ (8+1)/12 ≈ 0.75%，统计均值应在 ±0.3 内
-  assert.ok(avg > 0.45 && avg < 1.05, `月均 ${avg.toFixed(3)}%`)
+test('品质掉落：大样本频率接近配置概率', () => {
+  const rng = createSeededRandom(7)
+  const counts = {}
+  const N = 20000
+  for (let i = 0; i < N; i++) {
+    const q = rollQuality(rng)
+    counts[q.id] = (counts[q.id] ?? 0) + 1
+  }
+  for (const q of QUALITIES) {
+    const freq = (counts[q.id] ?? 0) / N
+    assert.ok(Math.abs(freq - q.probability) < 0.015, `${q.id} 频率 ${freq} vs 配置 ${q.probability}`)
+  }
+})
+
+test('品质升级：逐档提升、传说封顶', () => {
+  assert.equal(upgradeQuality({ id: 'common' }).id, 'fine')
+  assert.equal(upgradeQuality({ id: 'rare' }).id, 'epic')
+  assert.equal(upgradeQuality({ id: 'legend' }).id, 'legend')
+})
+
+test('板块景气度：区间与标签', () => {
+  const rng = createSeededRandom(3)
+  for (const s of SECTORS) {
+    const mood = sectorMood(s, 'recession', rng)
+    assert.ok(mood.factor > -3.5 && mood.factor < 3.5)
+    assert.ok(['景气', '平稳', '低迷'].includes(mood.label))
+  }
+})
+
+test('容器资格：风评门槛（R1 仅债券）', () => {
+  const r1 = eligibleContainers('R1')
+  assert.equal(r1.find((c) => c.id === 'bond').lock, null)
+  assert.equal(r1.find((c) => c.id === 'stock').lock.type, 'risk')
+  const r3 = eligibleContainers('R3')
+  assert.ok(r3.every((c) => c.lock === null))
+})
+
+test('创建一局：双容器装备与风评过滤', () => {
+  const run = createRun('normal', ['stock', 'bond'], 'R1')
+  assert.deepEqual(run.containers, ['bond'], 'R1 用户被过滤掉股票容器')
+  assert.equal(run.currentContainer, 'bond')
+  const run2 = createRun('normal', ['stock', 'fund'], 'R3')
+  assert.equal(run2.containers.length, 2)
+})
+
+test('开箱一步：字段完整、副收益范围、金币变化', () => {
+  const run = createRun('easy', ['stock', 'fund'], 'R3')
+  const next = advanceStep(run)
+  const s = next.lastStep
+  assert.ok(s.sector && s.mood && s.container && s.quality && s.loot, '开箱结果字段完整')
+  assert.ok(s.value !== 0)
+  if (s.sideIncome > 0) {
+    assert.ok(s.sideIncome >= 5 && s.sideIncome <= 50, '副收益在配置区间')
+  }
+  if (s.upgraded) {
+    assert.ok(s.quality.multiplier >= 2, '升级后品质至少良品')
+  }
+  assert.equal(next.turn, 1)
+  assert.equal(next.gold, run.gold + s.value + s.sideIncome)
+})
+
+test('容器切换：step 指定 containerId 生效', () => {
+  const run = createRun('easy', ['stock', 'bond'], 'R3')
+  const next = advanceStep(run, { containerId: 'bond' })
+  assert.equal(next.currentContainer, 'bond')
+  assert.equal(next.lastStep.container.id, 'bond')
 })
 
 test('暴击与黑天鹅：噩梦难度多步必现（确定性种子）', () => {
-  const run = createRun('nightmare', ['p_etf', 'p_shortbond'], 'R5')
+  const run = createRun('nightmare', ['stock', 'fund'], 'R5')
   let cur = run
   for (let i = 0; i < 15 && cur.status === 'playing'; i++) cur = advanceStep(cur)
   assert.ok(cur.critCount + cur.swanCount > 0, `暴击${cur.critCount}/黑天鹅${cur.swanCount}`)
 })
 
-test('新手保护：前3回合黑天鹅事件被替换', () => {
-  const run = createRun('easy', ['p_mmf'], 'R1')
-  // 强制事件队列首项为黑天鹅
-  run.eventQueue[0] = { id: 'ae_crash', type: 'blackswan', icon: '🦢', title: '股灾', desc: 'x', effect: { cycle: 'recession', productFilter: 'equity', meanShift: -5 } }
-  const next = advanceStep(run)
-  assert.equal(next.lastStep.event.type, 'neutral', '保护期内黑天鹅替换为平稳事件')
-  assert.equal(next.swanCount, 0)
-})
-
-test('装备资格：风评门槛过滤（R3 不能装备 R4 产品）', () => {
-  const gear = eligibleGear('R3')
-  const stock = gear.find((p) => p.id === 'p_stock')
-  assert.equal(stock.lock.type, 'risk')
-  const mixed = gear.find((p) => p.id === 'p_mixed')
-  assert.equal(mixed.lock, null)
+test('新手保护：前3回合黑天鹅免疫', () => {
+  const run = createRun('easy', ['stock'], 'R3')
+  let cur = run
+  for (let i = 0; i < 3; i++) cur = advanceStep(cur)
+  assert.equal(cur.swanCount, 0)
 })
 
 test('撤离规则：未达标拒绝、达标结算（含现实换算与排位分）', () => {
-  const run = createRun('normal', ['p_mmf'], 'R1')
+  const run = createRun('normal', ['bond'], 'R1')
   const fail = tryExtract(run)
   assert.equal(fail.ok, false)
 
@@ -64,14 +114,14 @@ test('撤离规则：未达标拒绝、达标结算（含现实换算与排位�
   assert.ok(ok.run.result.rankScore > 0)
 })
 
-test('破产判定：金币清零 → busted；超时未达标 → busted', () => {
-  const zero = { ...createRun('normal', ['p_mmf'], 'R1'), gold: 0 }
-  const step = advanceStep(zero)
-  assert.equal(step.status, 'busted')
+test('破产与超时判定', () => {
+  // 黑天鹅概率拉满 + 债券容器（波动最小）：一步后价值损失下限约 -66，副收益上限 +30，金币 1 必转负 → busted
+  const zero = { ...createRun('normal', ['bond'], 'R1'), gold: 1, blackSwanPct: 1.0 }
+  assert.equal(advanceStep(zero).status, 'busted')
 
-  const timeout = { ...createRun('normal', ['p_mmf'], 'R1'), turn: 24, maxTurns: 25, gold: 1000, targetGold: 2000 }
-  const step2 = advanceStep(timeout)
-  assert.equal(step2.status, 'busted')
+  // 超时未达标：无论一步后金币如何，都低于目标 → busted
+  const timeout = { ...createRun('normal', ['bond'], 'R1'), turn: 24, maxTurns: 25, gold: 1000, targetGold: 2000 }
+  assert.equal(advanceStep(timeout).status, 'busted')
 })
 
 test('段位映射：排位分 → 青铜~王者', () => {

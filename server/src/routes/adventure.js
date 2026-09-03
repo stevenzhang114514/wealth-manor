@@ -15,29 +15,37 @@ router.get('/difficulties', async (_req, res) => {
   ok(res, adventureService.DIFFICULTIES)
 })
 
-/** 装备产品卡（仅风评门槛，无资金门槛） */
-router.get('/gear', async (req, res) => {
+/** 容器（投资方式）：风评门槛过滤 */
+router.get('/containers', async (req, res) => {
   const { level } = req.query
   if (!level) return fail(res, ERROR_CODES.BAD_REQUEST, 'level 必填')
-  ok(res, adventureService.eligibleGear(level))
+  ok(res, adventureService.eligibleContainers(level))
 })
 
-/** 开始一局：body = { difficultyId, gear: [productId], riskLevel } */
+/** 板块建筑图鉴（含掉落物目录） */
+router.get('/sectors', async (_req, res) => {
+  ok(res, adventureService.SECTORS)
+})
+
+/** 开始一局：body = { difficultyId, containers: [containerId×2], riskLevel } */
 router.post('/run', async (req, res) => {
-  const { difficultyId, gear, riskLevel } = req.body ?? {}
+  const { difficultyId, containers, riskLevel } = req.body ?? {}
   if (!difficultyId || !riskLevel) {
     return fail(res, ERROR_CODES.BAD_REQUEST, 'difficultyId 与 riskLevel 必填')
   }
-  const run = provider.createRun(difficultyId, gear ?? [], riskLevel)
+  if (!Array.isArray(containers) || containers.length < 1) {
+    return fail(res, ERROR_CODES.BAD_REQUEST, '至少选择 1 个容器（投资方式）')
+  }
+  const run = provider.createRun(difficultyId, containers, riskLevel)
   if (!run) {
     return fail(res, ERROR_CODES.NOT_FOUND, '难度不存在', 404)
   }
   ok(res, run, '摸金局开始，祝好运！')
 })
 
-/** 摸金一步 */
+/** 开箱一步：body = { containerId }（可选，不传用当前容器） */
 router.post('/run/:id/step', async (req, res) => {
-  const run = provider.advanceRun(req.params.id)
+  const run = provider.advanceRun(req.params.id, req.body ?? {})
   if (!run) {
     return fail(res, ERROR_CODES.NOT_FOUND, '局不存在或已结束', 404)
   }

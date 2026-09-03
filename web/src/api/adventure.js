@@ -3,12 +3,16 @@ import http from './http.js'
 
 export const getDifficulties = () => http.get('/adventure/difficulties')
 
-export const getAdventureGear = (level) => http.get('/adventure/gear', { params: { level } })
+export const getAdventureContainers = (level) =>
+  http.get('/adventure/containers', { params: { level } })
 
-export const startAdventureRun = (difficultyId, gear, riskLevel) =>
-  http.post('/adventure/run', { difficultyId, gear, riskLevel })
+export const getAdventureSectors = () => http.get('/adventure/sectors')
 
-export const adventureStep = (runId) => http.post(`/adventure/run/${runId}/step`)
+export const startAdventureRun = (difficultyId, containers, riskLevel) =>
+  http.post('/adventure/run', { difficultyId, containers, riskLevel })
+
+export const adventureStep = (runId, containerId) =>
+  http.post(`/adventure/run/${runId}/step`, { containerId })
 
 export const adventureExtract = (runId) => http.post(`/adventure/run/${runId}/extract`)
 
