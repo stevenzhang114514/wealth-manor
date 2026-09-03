@@ -1,16 +1,18 @@
 <script setup>
 /**
- * AI 理财助手「小满」：规则引擎问答 + 建议追问 chips + 打字动画
- * 【扩展点】生产环境：后端接入大模型（双引擎：大模型生成 + 规则兜底）
+ * AI金融翻译器（合规版）：只解释金融名词，不提供任何投资建议
+ * 词条卡样式 + 免责声明常驻
  */
 import { ref, nextTick, onMounted } from 'vue'
-import { chatWithAI } from '../api/ai.js'
+import { translateMessage } from '../api/ai.js'
 import BackHeader from '../components/BackHeader.vue'
+
+const DISCLAIMER = '本翻译器仅解释金融概念，不构成任何投资建议。市场有风险，决策请独立判断。'
 
 const GREETING = {
   reply:
-    '你好呀，我是你的AI理财助手小满🌾\n理财路上有任何疑问都可以问我：定投、风险、房贷、养老、应急储备、市场行情……',
-  chips: ['如何定投？', '应急储备留多少？', '帮我做养老规划'],
+    '你好，我是AI金融翻译器📖\n把晦涩的金融术语翻译成大白话。试试问我：ETF、复利、存款保险、净值、波动率、黑天鹅……',
+  chips: ['什么是ETF？', '复利是什么意思', '存款保险是什么'],
 }
 
 const messages = ref([{ role: 'ai', ...GREETING }])
@@ -33,9 +35,8 @@ const send = async (text) => {
   scrollToBottom()
   typing.value = true
   try {
-    // 模拟思考延迟，提升对话体验
-    await new Promise((r) => setTimeout(r, 600))
-    const res = await chatWithAI(content)
+    await new Promise((r) => setTimeout(r, 500))
+    const res = await translateMessage(content)
     messages.value.push({ role: 'ai', ...res })
     typing.value = false
     scrollToBottom()
@@ -47,7 +48,7 @@ const send = async (text) => {
 
 <template>
   <div class="chat-view">
-    <BackHeader title="🤖 小满 · AI理财助手" />
+    <BackHeader title="📖 AI金融翻译器" />
 
     <div ref="listEl" class="chat-list">
       <div
@@ -56,9 +57,14 @@ const send = async (text) => {
         class="msg-row"
         :class="m.role === 'user' ? 'user' : 'ai'"
       >
-        <div v-if="m.role === 'ai'" class="ai-avatar">🌾</div>
+        <div v-if="m.role === 'ai'" class="ai-avatar">📖</div>
         <div class="bubble-wrap">
-          <div class="bubble">{{ m.reply }}</div>
+          <!-- 词条卡 -->
+          <div v-if="m.type === 'glossary'" class="term-card">
+            <div class="term-name">{{ m.term }}</div>
+            <div class="term-explain">{{ m.explain }}</div>
+          </div>
+          <div v-else class="bubble">{{ m.reply || m.explain }}</div>
           <div v-if="m.role === 'ai' && m.chips?.length" class="chips">
             <button v-for="c in m.chips" :key="c" class="chip" @click="send(c)">{{ c }}</button>
           </div>
@@ -66,20 +72,23 @@ const send = async (text) => {
       </div>
 
       <div v-if="typing" class="msg-row ai">
-        <div class="ai-avatar">🌾</div>
+        <div class="ai-avatar">📖</div>
         <div class="bubble typing"><span></span><span></span><span></span></div>
       </div>
     </div>
+
+    <!-- 免责声明常驻 -->
+    <div class="disclaimer-bar">⚖️ {{ DISCLAIMER }}</div>
 
     <div class="chat-input-bar">
       <input
         v-model="input"
         class="chat-input"
-        placeholder="问问小满理财问题…"
+        placeholder="输入想了解的金融术语…"
         @keyup.enter="send()"
       />
       <button class="wm-btn send-btn" :disabled="!input.trim() || typing" @click="send()">
-        发送
+        翻译
       </button>
     </div>
   </div>
@@ -116,7 +125,7 @@ const send = async (text) => {
   width: 30px;
   height: 30px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #eef6ee, #dceadc);
+  background: linear-gradient(135deg, #eef4ff, #dce8fd);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,7 +134,7 @@ const send = async (text) => {
 }
 
 .bubble-wrap {
-  max-width: 76%;
+  max-width: 78%;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -146,9 +155,31 @@ const send = async (text) => {
 }
 
 .msg-row.user .bubble {
-  background: linear-gradient(135deg, var(--ios-blue), var(--ios-blue-dark));
+  background: linear-gradient(135deg, #007aff, #0055c8);
   color: #fff;
   border-radius: 14px 14px 4px 14px;
+}
+
+/* 词条卡 */
+.term-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 8px rgba(31, 45, 61, 0.05);
+  border-left: 3px solid var(--ios-blue);
+}
+
+.term-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ios-blue);
+  margin-bottom: 5px;
+}
+
+.term-explain {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-main);
 }
 
 .chips {
@@ -158,7 +189,7 @@ const send = async (text) => {
 }
 
 .chip {
-  border: 1px solid #f0c9d0;
+  border: 1px solid #c9d8f5;
   background: #fff;
   color: var(--ios-blue);
   font-size: 10.5px;
@@ -166,10 +197,6 @@ const send = async (text) => {
   padding: 4px 10px;
   border-radius: 999px;
   cursor: pointer;
-}
-
-.chip:active {
-  background: #eef4ff;
 }
 
 .bubble.typing {
@@ -203,6 +230,16 @@ const send = async (text) => {
   40% {
     opacity: 1;
   }
+}
+
+.disclaimer-bar {
+  flex-shrink: 0;
+  font-size: 9.5px;
+  color: var(--text-sub);
+  text-align: center;
+  padding: 6px 12px;
+  background: #f7f8fa;
+  border-top: 0.5px solid var(--separator);
 }
 
 .chat-input-bar {

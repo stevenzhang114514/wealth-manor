@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { harvestRewards } from './manorService.js'
 import { canAfford } from './shopService.js'
-import { matchChatRule } from './aiService.js'
+import { translateMessage } from './aiService.js'
 import { annuityPayment, calcHomePlan, calcEmergency } from './goalService.js'
 import { importAccount, getPortfolio } from '../providers/mock/assetProvider.js'
 
@@ -28,18 +28,24 @@ test('商城余额校验：金币/钻石任一不足即不可购买', () => {
   assert.equal(canAfford({ coins: 0, diamonds: 3 }, { price: { diamonds: 2 } }), true)
 })
 
-test('AI 助手规则匹配：关键词命中与默认回复', () => {
-  const hit = matchChatRule('我想了解一下定投怎么开始')
-  assert.equal(hit.id, 'r_dingtou')
-  assert.ok(hit.reply.includes('定投'))
-  assert.ok(hit.chips.length > 0)
+test('AI 金融翻译器：词条命中、未命中与合规边界', () => {
+  const hit = translateMessage('什么是ETF？')
+  assert.equal(hit.type, 'glossary')
+  assert.equal(hit.term, 'ETF')
+  assert.ok(hit.explain.includes('指数'))
+  assert.ok(hit.disclaimer.includes('不构成任何投资建议'))
+  // 合规断言：解释内容不含建议/买卖措辞
+  assert.ok(!hit.explain.includes('建议'))
+  assert.ok(!hit.explain.includes('买入'))
+  assert.ok(!hit.explain.includes('卖出'))
 
-  const none = matchChatRule('今天天气怎么样呀？')
-  assert.equal(none.id, 'default')
-  assert.ok(none.reply.length > 0)
+  const none = translateMessage('今天天气怎么样呀？')
+  assert.equal(none.type, 'help')
+  assert.ok(none.terms.length >= 10)
+  assert.ok(none.disclaimer.includes('不构成任何投资建议'))
 
-  const empty = matchChatRule('   ')
-  assert.equal(empty.id, 'default')
+  const empty = translateMessage('   ')
+  assert.equal(empty.type, 'help')
 })
 
 test('目标测算：等额定投月供公式与购房规划数值', () => {

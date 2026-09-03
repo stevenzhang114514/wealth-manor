@@ -36,6 +36,20 @@ export async function water(friendId) {
   return { data: { friend: watered, rewards, manor } }
 }
 
+/** 偷好友的菜：随机 5~30 金币入账（每人每日1次） */
+export async function steal(friendId) {
+  const friend = provider.getFriend(friendId)
+  if (!friend) {
+    return { error: { code: ERROR_CODES.NOT_FOUND, message: '好友不存在', httpStatus: 404 } }
+  }
+  const stolen = provider.stealFromFriend(friendId)
+  if (!stolen) {
+    return { error: { code: ERROR_CODES.CONFLICT, message: '今天已经偷过这家菜园啦，明天再来吧', httpStatus: 409 } }
+  }
+  const manor = await manorProvider.applyRewards({ coins: stolen.coins })
+  return { data: { friend: stolen.friend, rewards: { coins: stolen.coins }, manor } }
+}
+
 /** 月度资产配置合理性排行榜（演示用户实时插入） */
 export async function leaderboard() {
   return { summary: provider.getLeaderboardSummary(), list: provider.getLeaderboard() }

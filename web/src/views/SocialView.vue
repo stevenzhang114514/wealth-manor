@@ -3,7 +3,14 @@
  * 好友 + 排行榜：互访庄园、浇水互动、月度配置合理性 PK 排名
  */
 import { ref, onMounted } from 'vue'
-import { getFriends, visitFriend, waterFriend, getLeaderboard } from '../api/social.js'
+import {
+  getFriends,
+  visitFriend,
+  waterFriend,
+  stealFromFriend,
+  getLeaderboard,
+} from '../api/social.js'
+import { getAdventureRank } from '../api/adventure.js'
 import { useManorStore } from '../stores/manor.js'
 import { toast, flyCoin } from '../utils/toast.js'
 import BackHeader from '../components/BackHeader.vue'
@@ -12,14 +19,17 @@ import SegmentedControl from '../components/SegmentedControl.vue'
 const TABS = [
   { key: 'friends', label: '🤝 好友' },
   { key: 'board', label: '🏆 排行PK' },
+  { key: 'rank', label: '⛏️ 段位榜' },
 ]
 
 const manor = useManorStore()
 const tab = ref('friends')
 const friends = ref([])
 const leaderboard = ref(null)
+const rankList = ref(null)
 const visiting = ref(null) // 访问中的好友
 const watering = ref('')
+const stealing = ref('')
 
 const load = async () => {
   friends.value = await getFriends()
@@ -28,10 +38,15 @@ const load = async () => {
 onMounted(() => {
   load()
   loadBoard()
+  loadRank()
 })
 
 const loadBoard = async () => {
   leaderboard.value = await getLeaderboard()
+}
+
+const loadRank = async () => {
+  rankList.value = await getAdventureRank()
 }
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
@@ -53,6 +68,22 @@ const onWater = async (f) => {
     // 错误提示由拦截器统一弹出
   } finally {
     watering.value = ''
+  }
+}
+
+/** 偷好友的菜：随机 5~30 金币（每日1次） */
+const onSteal = async (f) => {
+  stealing.value = f.id
+  try {
+    const res = await stealFromFriend(f.id)
+    manor.setState(res.manor)
+    await load()
+    flyCoin(`+${res.rewards.coins} 🪙`)
+    toast(`🥬 偷菜成功！顺手牵走了 ${f.name} 的 ${res.rewards.coins} 金币`, 'success')
+  } catch {
+    // 错误提示由拦截器统一弹出
+  } finally {
+    stealing.value = ''
   }
 }
 
@@ -98,12 +129,19 @@ const waterFromVisit = async () => {
           >
             {{ f.watered ? '💧已浇' : '浇水' }}
           </button>
+          <button
+            class="wm-btn mini steal"
+            :disabled="f.stolen || stealing === f.id"
+            @click="onSteal(f)"
+          >
+            {{ f.stolen ? '🥬已偷' : '偷菜' }}
+          </button>
         </div>
       </div>
     </div>
 
     <!-- 排行榜 -->
-    <div v-else-if="leaderboard" class="board-list">
+    <div v-else-if="tab === 'board' && leaderboard" class="board-list">
       <div class="board-summary">
         <div class="bs-item">
           <div class="bs-num">{{ leaderboard.summary.selfRank }}</div>
@@ -132,6 +170,21 @@ const waterFromVisit = async () => {
         <span class="b-score">{{ u.score }}</span>
       </div>
       <div class="board-explain">{{ leaderboard.summary.scoreExplain }}</div>
+    </div>
+
+    <!-- 段位榜 -->
+    <div v-else-if="tab === 'rank' && rankList" class="rank-list">
+      <div class="rank-tip">⛏️ 夺金冒险排位：成功撤离一局获得排位分，段位从青铜到王者</div>
+      <div v-for="u in rankList.list" :key="u.id" class="rank-row" :class="{ self: u.isSelf }">
+        <span class="rk-icon">{{ u.tierIcon }}</span>
+        <div class="rk-info">
+          <div class="rk-name">
+            {{ u.name }} <span class="rk-tier">{{ u.tierName }}</span>
+          </div>
+          <div class="rk-sub">累计排位分</div>
+        </div>
+        <span class="rk-score">{{ u.totalScore }}</span>
+      </div>
     </div>
 
     <!-- 好友庄园访问弹层 -->
@@ -259,6 +312,69 @@ const waterFromVisit = async () => {
 .mini {
   font-size: 10.5px;
   padding: 6px 11px;
+}
+
+.mini.steal {
+  background: linear-gradient(135deg, #34c759, #248a3d);
+  box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+}
+
+.rank-list {
+  margin: 10px 12px 0;
+}
+
+.rank-tip {
+  font-size: 10px;
+  color: var(--text-sub);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 6px rgba(31, 45, 61, 0.04);
+}
+
+.rank-row.self {
+  background: #eef4ff;
+  border: 1.5px solid var(--ios-blue);
+}
+
+.rk-icon {
+  font-size: 22px;
+}
+
+.rk-info {
+  flex: 1;
+}
+
+.rk-name {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.rk-tier {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ios-blue);
+  margin-left: 6px;
+}
+
+.rk-sub {
+  font-size: 9.5px;
+  color: var(--text-sub);
+}
+
+.rk-score {
+  font-size: 15px;
+  font-weight: 800;
+  color: #8a5a2b;
 }
 
 /* 排行榜 */

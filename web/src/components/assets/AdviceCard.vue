@@ -1,53 +1,29 @@
 <script setup>
 /**
- * AI 配置建议卡：风险预警 + 建议 + 一键优化（演示）
+ * 资产体检报告卡（合规版）：
+ * 只客观陈述资产结构事实与历史规律性风险提示，不提供任何时点性投资建议
  */
-import { formatMoney } from '../../utils/format.js'
-import { toast } from '../../utils/toast.js'
-
 defineProps({
-  advice: { type: Object, default: null },
+  report: { type: Object, default: null },
 })
-
-const emit = defineEmits(['optimize'])
-
-const onOptimize = (advice) => {
-  const plan = advice?.optimizePlan?.[0]
-  if (plan) {
-    toast(
-      `已生成优化方案（演示）：${plan.action}「${plan.from}」${formatMoney(plan.amount)} 至「${plan.to}」`,
-      'success',
-    )
-  }
-  emit('optimize')
-}
 </script>
 
 <template>
-  <div v-if="advice" class="wm-card">
-    <div class="card-title">🤖 AI 配置建议</div>
+  <div v-if="report" class="wm-card">
+    <div class="card-title">🩻 资产体检报告</div>
 
-    <div v-for="(w, i) in advice.warnings" :key="'w' + i" class="advice-row warn">
-      <span>⚠️</span>{{ w }}
-    </div>
-    <div v-for="(s, i) in advice.suggestions" :key="'s' + i" class="advice-row">
-      <span>💡</span>{{ s }}
+    <div v-for="(f, i) in report.facts" :key="'f' + i" class="fact-row"><span>ℹ️</span>{{ f }}</div>
+    <div v-for="(r, i) in report.riskNotes" :key="'r' + i" class="fact-row warn">
+      <span>⚠️</span>{{ r }}
     </div>
 
-    <div v-if="advice.optimizePlan?.length" class="opt-row">
-      <span v-for="(p, i) in advice.optimizePlan" :key="i" class="opt-chip">
-        {{ p.action }}：{{ p.from }}→{{ p.to }}
-        {{ p.amount ? formatMoney(p.amount) : '定投' + formatMoney(p.monthly) + '/月' }}
-      </span>
-    </div>
-
-    <button class="wm-btn wm-btn-block" @click="onOptimize(advice)">✨ 一键优化</button>
-    <div class="disclaimer">{{ advice.disclaimer }}</div>
+    <div class="report-note">📖 想了解「资产配置」「波动率」等术语含义？试试 AI金融翻译器</div>
+    <div class="disclaimer">{{ report.disclaimer }}</div>
   </div>
 </template>
 
 <style scoped>
-.advice-row {
+.fact-row {
   display: flex;
   gap: 6px;
   font-size: 11.5px;
@@ -56,31 +32,19 @@ const onOptimize = (advice) => {
   margin-bottom: 7px;
 }
 
-.advice-row.warn {
-  background: #fdeceb;
+.fact-row.warn {
+  background: #fef5ec;
   border-radius: 10px;
   padding: 7px 9px;
-  color: #9d3a34;
+  color: #8a5a2b;
 }
 
-.opt-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 8px 0;
-}
-
-.opt-chip {
-  font-size: 10px;
-  font-weight: 700;
-  background: #eef6ee;
-  color: var(--manor-green);
-  padding: 3px 9px;
-  border-radius: 999px;
-}
-
-.wm-btn-block {
-  width: 100%;
+.report-note {
+  font-size: 10.5px;
+  color: var(--ios-blue);
+  background: #eef4ff;
+  border-radius: 10px;
+  padding: 7px 9px;
   margin-top: 4px;
 }
 

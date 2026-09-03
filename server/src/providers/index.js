@@ -23,6 +23,7 @@ const PROVIDERS = {
     goal: () => import('./mock/goalProvider.js'),
     user: () => import('./mock/userProvider.js'),
     simulator: () => import('./mock/simulatorProvider.js'),
+    adventure: () => import('./mock/adventureProvider.js'),
   },
   // prod: {
   //   asset: () => import('./prod/assetProvider.js'),

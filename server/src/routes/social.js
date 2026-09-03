@@ -31,6 +31,15 @@ router.post('/water/:id', async (req, res) => {
   ok(res, result.data, `浇水成功，+${result.data.rewards.coins} 金币`)
 })
 
+/** 偷好友的菜（随机 5~30 金币，每日1次） */
+router.post('/steal/:id', async (req, res) => {
+  const result = await socialService.steal(req.params.id)
+  if (result.error) {
+    return fail(res, result.error.code, result.error.message, result.error.httpStatus)
+  }
+  ok(res, result.data, `偷菜成功，+${result.data.rewards.coins} 金币`)
+})
+
 /** 月度资产配置合理性排行榜 */
 router.get('/leaderboard', async (_req, res) => {
   const data = await socialService.leaderboard()

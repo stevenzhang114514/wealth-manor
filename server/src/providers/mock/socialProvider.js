@@ -15,13 +15,21 @@ import { PORTFOLIO } from '../../data/assets.js'
 /** 当日已浇水好友（Mock 内存态；真实环境按自然日重置） */
 const wateredToday = new Set()
 
+/** 当日已偷菜好友（Mock 内存态；真实环境按自然日重置） */
+const stolenToday = new Set()
+
 export function getFriends() {
-  return FRIENDS.map((f) => ({ ...f, plants: [...f.plants], watered: wateredToday.has(f.id) }))
+  return FRIENDS.map((f) => ({
+    ...f,
+    plants: [...f.plants],
+    watered: wateredToday.has(f.id),
+    stolen: stolenToday.has(f.id),
+  }))
 }
 
 export function getFriend(id) {
   const f = FRIENDS.find((x) => x.id === id)
-  return f ? { ...f, plants: [...f.plants], watered: wateredToday.has(id) } : null
+  return f ? { ...f, plants: [...f.plants], watered: wateredToday.has(id), stolen: stolenToday.has(id) } : null
 }
 
 export function hasWateredToday(id) {
@@ -32,6 +40,14 @@ export function waterFriend(id) {
   if (!FRIENDS.some((f) => f.id === id) || wateredToday.has(id)) return null
   wateredToday.add(id)
   return getFriend(id)
+}
+
+/** 偷菜：每日1次，随机 5~30 金币 */
+export function stealFromFriend(id) {
+  if (!FRIENDS.some((f) => f.id === id) || stolenToday.has(id)) return null
+  stolenToday.add(id)
+  const coins = 5 + Math.floor(Math.random() * 26)
+  return { friend: getFriend(id), coins }
 }
 
 /** 排行榜：演示用户按评分实时插入 */

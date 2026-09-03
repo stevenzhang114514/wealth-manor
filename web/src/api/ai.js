@@ -1,6 +1,6 @@
-/** AI 服务接口封装（与 server/src/routes/ai.js 一一对应） */
+/** AI 服务接口封装（合规版：翻译器 + 体检报告） */
 import http from './http.js'
 
-export const getPortfolioAdvice = () => http.get('/ai/portfolio-advice')
+export const getPortfolioReport = () => http.get('/ai/portfolio-report')
 
-export const chatWithAI = (message) => http.post('/ai/chat', { message })
+export const translateMessage = (message) => http.post('/ai/chat', { message })

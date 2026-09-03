@@ -1,5 +1,5 @@
 /**
- * AI 服务路由  /api/v1/ai
+ * AI 服务路由  /api/v1/ai（合规版：翻译器 + 体检报告）
  */
 import { Router } from 'express'
 import { ok, fail, ERROR_CODES } from '../utils/response.js'
@@ -7,13 +7,13 @@ import * as aiService from '../services/aiService.js'
 
 const router = Router()
 
-/** 资产配置建议：健康度 + 预警 + 调仓方案（演示版规则引擎） */
-router.get('/portfolio-advice', async (_req, res) => {
-  const data = await aiService.getPortfolioAdvice()
+/** 资产体检报告：客观事实陈述 + 风险提示（零建议措辞） */
+router.get('/portfolio-report', async (_req, res) => {
+  const data = await aiService.getPortfolioReport()
   ok(res, data)
 })
 
-/** AI 助手对话：body = { message }（演示版规则引擎） */
+/** AI 金融翻译器：body = { message }（只解释名词，不提供投资建议） */
 router.post('/chat', async (req, res) => {
   const { message } = req.body ?? {}
   if (!message || !String(message).trim()) {

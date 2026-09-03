@@ -23,7 +23,8 @@ const selected = ref(null)
 const SHORTCUTS = [
   { icon: '🛍️', label: '庄园商城', to: '/shop' },
   { icon: '👥', label: '好友排行', to: '/social' },
-  { icon: '🤖', label: 'AI助手', to: '/chat' },
+  { icon: '🧭', label: '生涯模式', to: '/simulator' },
+  { icon: '🤖', label: '金融翻译器', to: '/chat' },
   { icon: '🎓', label: '知识答题', to: '/quiz' },
 ]
 
@@ -92,12 +93,12 @@ const go = (path) => router.push(path)
       {{ manor.weather.icon }} {{ manor.weather.tip }}
     </div>
 
-    <!-- 财富人生模拟器入口 -->
-    <div class="sim-entry" @click="go('/simulator')">
-      <div class="se-icon">🧭</div>
+    <!-- 夺金冒险入口 -->
+    <div class="sim-entry" @click="go('/adventure')">
+      <div class="se-icon">⛏️</div>
       <div class="se-info">
-        <div class="se-title">财富人生模拟器</div>
-        <div class="se-sub">产品即英雄 · 风评定阵容 · 回合制经营你的家庭财富</div>
+        <div class="se-title">夺金冒险</div>
+        <div class="se-sub">摸金攒钱 · 达标撤离 · 暴击与黑天鹅的肾上腺素</div>
       </div>
       <span class="se-arrow">›</span>
     </div>

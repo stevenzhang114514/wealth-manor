@@ -1,6 +1,6 @@
 <script setup>
 /**
- * 风险评估问卷（10题）：模拟银行风评流程，结果决定模拟器初始可购产品范围
+ * 风险评估问卷（10题）：模拟银行风评流程，结果解锁更高风险等级的冒险装备（产品卡）
  */
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -42,12 +42,12 @@ const submit = async () => {
   }
 }
 
-const toSimulator = () => router.push('/simulator')
+const toAdventure = () => router.push('/adventure')
 </script>
 
 <template>
   <div class="risk-view">
-    <BackHeader title="🛡️ 风险评估" />
+    <BackHeader title="🛡️ 装备解锁评估" />
 
     <!-- 问卷 -->
     <template v-if="!result">
@@ -90,11 +90,13 @@ const toSimulator = () => router.push('/simulator')
         <div class="rh-desc">{{ result.desc }}</div>
       </div>
       <div class="wm-card">
-        <div class="card-title">🔓 您可以购买的产品范围</div>
-        <div class="hint-text">模拟器中，风险等级高于 {{ result.level }} 的产品将被锁定</div>
+        <div class="card-title">🔓 已解锁的冒险装备</div>
+        <div class="hint-text">
+          夺金冒险中，风险等级高于 {{ result.level }} 的产品卡将被锁定（装备不可选）
+        </div>
       </div>
       <div class="submit-row">
-        <button class="wm-btn submit-btn" @click="toSimulator">🚀 开始财富人生模拟</button>
+        <button class="wm-btn submit-btn" @click="toAdventure">🗺️ 返回夺金冒险</button>
       </div>
     </template>
   </div>

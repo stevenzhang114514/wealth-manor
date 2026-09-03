@@ -22,10 +22,28 @@ const MODULES = {
     apis: ['POST /api/v1/user/login'],
     points: ['手机号格式校验', '登录态本地持久化', '路由守卫保护页面'],
   },
+  '/adventure': {
+    icon: '🗺️',
+    title: '夺金冒险（核心玩法）',
+    desc: '摸金撤离局：随机事件攒金币（历史收益分布抽样 + 随机暴击 + 市场黑天鹅），达标撤离带出收益（100金币=1元现实收入），四难度排位冲击段位，收益进庄园消费。',
+    apis: [
+      'GET /api/v1/adventure/difficulties',
+      'GET /api/v1/adventure/gear',
+      'POST /api/v1/adventure/run',
+      'POST /api/v1/adventure/run/:id/step',
+      'POST /api/v1/adventure/run/:id/extract',
+      'GET /api/v1/adventure/rank',
+    ],
+    points: [
+      '运气×策略：继续摸金 or 落袋为安',
+      '四难度（简单/普通/困难/噩梦）',
+      '段位榜 + 偷菜社交',
+    ],
+  },
   '/simulator': {
     icon: '🧭',
-    title: '财富人生模拟器',
-    desc: '回合制核心玩法（1回合=1个月）：金融产品=英雄卡（风险/收益/流动性/税收/期限/特殊情况七维属性），风评定初始阵容，经营家庭财富经历经济周期与政策事件，达成未来现金流目标。',
+    title: '生涯模式',
+    desc: '回合制家庭财富经营（1回合=1个月）：产品英雄卡七维属性、风评门槛、经济周期与政策事件、目标现金流校验与财富偏差护照——深度教育模式。',
     apis: [
       'GET /api/v1/simulator/products',
       'POST /api/v1/simulator/risk-assessment',
@@ -62,7 +80,7 @@ const MODULES = {
       'GET /api/v1/assets/health-score',
       'GET /api/v1/ai/portfolio-advice',
     ],
-    points: ['总净资产 + 当日变动', '资产配置饼图与趋势折线', 'AI建议 → 一键优化（演示）'],
+    points: ['总净资产 + 当日变动', '资产配置饼图与趋势折线', '资产体检报告（客观陈述，零建议）'],
   },
   '/tasks': {
     icon: '📋',
@@ -105,11 +123,11 @@ const MODULES = {
     points: ['访问好友庄园快照', '浇水每日1次 + 金币入账', '本人实时插入排行榜'],
   },
   '/chat': {
-    icon: '🤖',
-    title: 'AI助手·小满',
-    desc: '数据驱动的规则引擎问答：定投/风险/房贷/养老/应急/行情，回复带建议追问。',
+    icon: '📖',
+    title: 'AI金融翻译器',
+    desc: '只解释金融名词（ETF/复利/存款保险/波动率等词条库），不提供任何时点性投资建议（《证券投资顾问业务暂行规定》合规）。',
     apis: ['POST /api/v1/ai/chat'],
-    points: ['关键词规则匹配（数据驱动）', '建议追问 chips + 打字动画'],
+    points: ['词条卡白话解释', '免责声明常驻', '零建议措辞'],
   },
   '/goals': {
     icon: '🎯',

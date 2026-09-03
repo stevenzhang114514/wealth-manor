@@ -4,7 +4,7 @@
  */
 import { onMounted, ref } from 'vue'
 import { getAssetOverview, getAssetTrend, getHealthScore } from '../api/assets.js'
-import { getPortfolioAdvice } from '../api/ai.js'
+import { getPortfolioReport } from '../api/ai.js'
 import { formatMoney, formatSigned, formatPct } from '../utils/format.js'
 import { toast } from '../utils/toast.js'
 import PieChart from '../components/assets/PieChart.vue'
@@ -16,19 +16,19 @@ import AdviceCard from '../components/assets/AdviceCard.vue'
 const overview = ref(null)
 const trend = ref([])
 const health = ref(null)
-const advice = ref(null)
+const report = ref(null)
 
 onMounted(async () => {
   const [ov, tr, hs, adv] = await Promise.all([
     getAssetOverview(),
     getAssetTrend(30),
     getHealthScore(),
-    getPortfolioAdvice(),
+    getPortfolioReport(),
   ])
   overview.value = ov
   trend.value = tr.points
   health.value = hs
-  advice.value = adv
+  report.value = adv
 })
 
 const addAsset = () => toast('资产导入（演示版）：支持自动同步/扫码/OCR/手动四通道')
@@ -83,7 +83,7 @@ const addAsset = () => toast('资产导入（演示版）：支持自动同步/�
     </div>
 
     <!-- AI 建议 -->
-    <AdviceCard :advice="advice" />
+    <AdviceCard :report="report" />
 
     <!-- 财富树 -->
     <div class="wm-card">
