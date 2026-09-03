@@ -3,9 +3,9 @@
  *
  * 【契约】真实环境实现 src/providers/prod/adventureProvider.js 时，
  * 必须导出与本文件一致的函数签名与返回结构：
- *   createRun(...)  → 局状态
- *   advanceRun(id)  → 推进后局状态
- *   extractRun(id)  → { run, tierBefore, tierAfter }（失败返回 null）
+ *   createRun(...)  → 局状态（含 dungeon 地图）
+ *   advanceRun(id, action) → 推进后局状态
+ *   extractRun(id)  → { run, tierBefore, tierAfter }（失败返回 {error}）
  *   getRank()       → { self, friends }
  */
 import { FRIENDS } from '../../data/friends.js'
@@ -24,17 +24,24 @@ export function createRun(difficultyId, containers, riskLevel) {
   return structuredClone(run)
 }
 
-export function advanceRun(id, decision) {
+export function advanceRun(id, decision, nowMs) {
   const run = runs.get(id)
   if (!run) return null
-  const next = engine.advanceStep(run, decision ?? {})
+  const next = engine.advanceStep(run, decision?.action ?? decision ?? {}, nowMs)
   runs.set(id, next)
   return structuredClone(next)
 }
 
-export function extractRun(id) {
+export function extractRun(id, nowMs = Date.now()) {
   const run = runs.get(id)
   if (!run) return null
+  // 超时校验：超时后不可撤离
+  const elapsed = (nowMs - run.startedAt) / 1000
+  if (elapsed > run.timeLimit) {
+    const busted = { ...run, status: 'busted', result: { reason: 'timeout' } }
+    runs.set(id, busted)
+    return { run: structuredClone(busted), timeout: true }
+  }
   const { ok, run: extracted } = engine.tryExtract(run)
   if (!ok) return { error: true }
   runs.set(id, extracted)

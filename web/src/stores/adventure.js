@@ -26,10 +26,10 @@ export const useAdventureStore = defineStore('adventure', {
         this.loading = false
       }
     },
-    async step() {
+    async step(action) {
       this.loading = true
       try {
-        this.run = await adventureStep(this.run.id)
+        this.run = await adventureStep(this.run.id, action)
       } finally {
         this.loading = false
       }

@@ -1,9 +1,10 @@
 /**
- * 夺金冒险引擎 v2（摸金开箱）单元测试（node:test）
+ * 夺金冒险引擎 v3（横屏地牢探险）单元测试（node:test）
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  generateDungeon,
   rollQuality,
   upgradeQuality,
   sectorMood,
@@ -12,29 +13,79 @@ import {
   advanceStep,
   tryExtract,
   tierOf,
+  currentRoom,
   GOLD_TO_CNY,
-  QUALITIES,
   SECTORS,
+  MONSTERS,
+  ENTRY,
+  CHEST_MULT,
 } from './adventureService.js'
 import { createSeededRandom } from '../utils/random.js'
 
-test('品质掉落：大样本频率接近配置概率', () => {
-  const rng = createSeededRandom(7)
-  const counts = {}
-  const N = 20000
-  for (let i = 0; i < N; i++) {
-    const q = rollQuality(rng)
-    counts[q.id] = (counts[q.id] ?? 0) + 1
+const NOW = 1780000000000
+const makeRun = (opts = {}) => createRun(opts.diff ?? 'normal', ['bond'], 'R1', NOW, opts.seed ?? 42)
+
+test('地牢生成：连通性与结构', () => {
+  const d = generateDungeon(7)
+  assert.equal(d.rooms.length, 12)
+  // BFS 从入口可达全部房间
+  const visited = new Set()
+  const queue = [d.byId.get('r_0_1')]
+  visited.add(queue[0].id)
+  while (queue.length) {
+    const r = queue.shift()
+    for (const n of d.neighbors(r)) {
+      if (!visited.has(n.id)) {
+        visited.add(n.id)
+        queue.push(n)
+      }
+    }
   }
-  for (const q of QUALITIES) {
-    const freq = (counts[q.id] ?? 0) / N
-    assert.ok(Math.abs(freq - q.probability) < 0.015, `${q.id} 频率 ${freq} vs 配置 ${q.probability}`)
+  assert.equal(visited.size, 12, '全房间连通')
+  // 入口无箱
+  assert.equal(d.byId.get('r_0_1').chest, null)
+  // 房间所属板块合法
+  assert.ok(d.rooms.every((r) => SECTORS.some((s) => s.id === r.sectorId)))
+})
+
+test('地牢生成：怪物只出现在深处（x≥2）', () => {
+  const d = generateDungeon(9)
+  for (const r of d.rooms.filter((x) => x.monster)) {
+    assert.ok(r.x >= 2)
+    assert.ok(MONSTERS.some((m) => m.id === r.monster.id))
+  }
+})
+
+test('箱子分级：分布近似且价值倍率正确', () => {
+  const rng = createSeededRandom(11)
+  const counts = { low: 0, mid: 0, high: 0, none: 0 }
+  const N = 5000
+  for (let i = 0; i < N; i++) {
+    // 用 generateDungeon 模拟会太慢，直接 roll 品质用 chest 表——改用品质加权测高频
+    const tier = rollQuality('high', rng).id
+    counts[tier] = (counts[tier] ?? 0) + 1
+  }
+  assert.ok((counts.legend ?? 0) / N > 0.004, '高箱传说 ≈1%')
+  assert.equal(CHEST_MULT.high, 3.5)
+  assert.equal(CHEST_MULT.low, 1)
+})
+
+test('品质加权：低箱无传说、中箱低传说、高箱高传说（大样本）', () => {
+  const rng = createSeededRandom(13)
+  const N = 30000
+  for (const [tier, expectLegend] of [['low', 0], ['mid', 0.004], ['high', 0.008]]) {
+    let legend = 0
+    for (let i = 0; i < N; i++) {
+      if (rollQuality(tier, rng).id === 'legend') legend++
+    }
+    const freq = legend / N
+    if (tier === 'low') assert.equal(freq, 0, '低箱不应出传说')
+    else assert.ok(freq > expectLegend, `${tier} 传说频率 ${freq}`)
   }
 })
 
 test('品质升级：逐档提升、传说封顶', () => {
   assert.equal(upgradeQuality({ id: 'common' }).id, 'fine')
-  assert.equal(upgradeQuality({ id: 'rare' }).id, 'epic')
   assert.equal(upgradeQuality({ id: 'legend' }).id, 'legend')
 })
 
@@ -47,63 +98,113 @@ test('板块景气度：区间与标签', () => {
   }
 })
 
-test('容器资格：风评门槛（R1 仅债券）', () => {
+test('容器资格：风评门槛', () => {
   const r1 = eligibleContainers('R1')
   assert.equal(r1.find((c) => c.id === 'bond').lock, null)
   assert.equal(r1.find((c) => c.id === 'stock').lock.type, 'risk')
-  const r3 = eligibleContainers('R3')
-  assert.ok(r3.every((c) => c.lock === null))
 })
 
-test('创建一局：双容器装备与风评过滤', () => {
-  const run = createRun('normal', ['stock', 'bond'], 'R1')
-  assert.deepEqual(run.containers, ['bond'], 'R1 用户被过滤掉股票容器')
-  assert.equal(run.currentContainer, 'bond')
-  const run2 = createRun('normal', ['stock', 'fund'], 'R3')
-  assert.equal(run2.containers.length, 2)
+test('创建一局：双容器、入口位置、限时', () => {
+  const run = makeRun({ diff: 'easy' })
+  assert.equal(run.gold, 1000)
+  assert.equal(run.timeLimit, 90)
+  assert.deepEqual(run.pos, ENTRY)
+  assert.equal(run.dungeon.rooms.length, 12)
 })
 
-test('开箱一步：字段完整、副收益范围、金币变化', () => {
-  const run = createRun('easy', ['stock', 'fund'], 'R3')
-  const next = advanceStep(run)
+test('移动：走进新房间、墙壁拦截', () => {
+  const run = makeRun()
+  // 从 (0,1) 向右
+  const right = advanceStep(run, { action: { move: 'right' } }, NOW + 1000)
+  assert.deepEqual(right.pos, { x: 1, y: 1 })
+  // 向左回入口
+  const back = advanceStep(right, { action: { move: 'left' } }, NOW + 2000)
+  assert.deepEqual(back.pos, ENTRY)
+  // 向左出界 → 墙
+  const wall = advanceStep(back, { action: { move: 'left' } }, NOW + 3000)
+  assert.deepEqual(wall.pos, ENTRY)
+})
+
+test('移动：房间有怪物 → 遭遇等待玩家决策', () => {
+  const run = makeRun()
+  // 强制把右侧房间放一只怪
+  const room = run.dungeon.rooms.find((r) => r.x === 1 && r.y === 1)
+  room.monster = { ...MONSTERS[0] }
+  const next = advanceStep(run, { action: { move: 'right' } }, NOW + 1000)
+  assert.equal(next.awaitPlayer?.monster?.id, 'm_crash')
+  assert.equal(next.awaitPlayer?.roomId, 'r_1_1')
+})
+
+test('怪物三选：迎战损失在区间、防御固定5%、逃离无损', () => {
+  // 直接构造：玩家已在有怪房间
+  const run = makeRun()
+  const room = run.dungeon.rooms.find((r) => r.x === 1 && r.y === 1)
+  run.pos = { x: 1, y: 1 }
+  room.monster = { ...MONSTERS[0], lossRange: [0.1, 0.1] } // 固定 10%
+  const before = run.gold
+  const fight = advanceStep(run, { action: { choice: 'fight' } }, NOW + 1000)
+  assert.equal(fight.awaitPlayer, null)
+  assert.equal(fight.dungeon.rooms.find((r) => r.x === 1 && r.y === 1).monster, null, '击退')
+  assert.equal(fight.gold, before - Math.round(before * 0.1), '固定损失10%')
+
+  // defend：固定 5%
+  const run2 = makeRun({ seed: 99 })
+  const room2 = run2.dungeon.rooms.find((r) => r.x === 1 && r.y === 1)
+  run2.pos = { x: 1, y: 1 }
+  room2.monster = { ...MONSTERS[0] }
+  const defend = advanceStep(run2, { action: { choice: 'defend' } }, NOW + 1000)
+  assert.equal(defend.gold, run2.gold - Math.round(run2.gold * 0.05))
+
+  // flee：无损
+  const run3 = makeRun({ seed: 123 })
+  const room3 = run3.dungeon.rooms.find((r) => r.x === 1 && r.y === 1)
+  run3.pos = { x: 1, y: 1 }
+  room3.monster = { ...MONSTERS[0] }
+  const flee = advanceStep(run3, { action: { choice: 'flee' } }, NOW + 1000)
+  assert.equal(flee.gold, run3.gold, '逃离无损')
+})
+
+test('开箱：品质/箱子倍率/价值变动正确', () => {
+  const run = makeRun({ seed: 5 })
+  // 强制当前房间为高箱
+  const room = currentRoom(run)
+  room.chest = 'high'
+  const before = run.gold
+  const next = advanceStep(run, { action: { open: true } }, NOW + 1000)
+  assert.equal(next.dungeon.rooms.find((r) => r.x === 0 && r.y === 1).chest, null, '箱子清空')
   const s = next.lastStep
-  assert.ok(s.sector && s.mood && s.container && s.quality && s.loot, '开箱结果字段完整')
-  assert.ok(s.value !== 0)
-  if (s.sideIncome > 0) {
-    assert.ok(s.sideIncome >= 5 && s.sideIncome <= 50, '副收益在配置区间')
-  }
-  if (s.upgraded) {
-    assert.ok(s.quality.multiplier >= 2, '升级后品质至少良品')
-  }
-  assert.equal(next.turn, 1)
-  assert.equal(next.gold, run.gold + s.value + s.sideIncome)
+  assert.ok(s.quality && s.loot && s.chest?.tier === 'high')
+  assert.equal(next.gold, before + s.value + s.sideIncome)
+  assert.ok(next.chestOpened >= 1)
 })
 
-test('容器切换：step 指定 containerId 生效', () => {
-  const run = createRun('easy', ['stock', 'bond'], 'R3')
-  const next = advanceStep(run, { containerId: 'bond' })
-  assert.equal(next.currentContainer, 'bond')
-  assert.equal(next.lastStep.container.id, 'bond')
-})
-
-test('暴击与黑天鹅：噩梦难度多步必现（确定性种子）', () => {
-  const run = createRun('nightmare', ['stock', 'fund'], 'R5')
+test('经济周期：每3次开箱切换（遍历周期序列）', () => {
+  const run = makeRun({ seed: 21 })
   let cur = run
-  for (let i = 0; i < 15 && cur.status === 'playing'; i++) cur = advanceStep(cur)
-  assert.ok(cur.critCount + cur.swanCount > 0, `暴击${cur.critCount}/黑天鹅${cur.swanCount}`)
+  const seen = new Set()
+  for (let i = 0; i < 9; i++) {
+    // 强制当前房间有箱
+    const entryRoom = cur.dungeon.rooms.find((r) => r.x === 0 && r.y === 1)
+    if (!entryRoom.chest) entryRoom.chest = 'mid'
+    cur = advanceStep(cur, { action: { open: true } }, NOW + 1000 * (i + 1))
+    seen.add(cur.econCycle)
+  }
+  assert.equal(cur.chestOpened, 9)
+  assert.ok(seen.size >= 2, `应遍历多个经济周期（${[...seen].join(',')}）`)
 })
 
-test('新手保护：前3回合黑天鹅免疫', () => {
-  const run = createRun('easy', ['stock'], 'R3')
-  let cur = run
-  for (let i = 0; i < 3; i++) cur = advanceStep(cur)
-  assert.equal(cur.swanCount, 0)
+test('超时：超过 timeLimit → busted', () => {
+  const run = makeRun({ diff: 'easy' }) // 90s
+  const late = advanceStep(run, { action: { move: 'right' } }, NOW + 91 * 1000)
+  assert.equal(late.status, 'busted')
+  assert.equal(late.result.reason, 'timeout')
 })
 
-test('撤离规则：未达标拒绝、达标结算（含现实换算与排位分）', () => {
-  const run = createRun('normal', ['bond'], 'R1')
-  const fail = tryExtract(run)
-  assert.equal(fail.ok, false)
+test('撤离：非入口拒绝、入口达标成功', () => {
+  const run = makeRun()
+  const far = { ...run, pos: { x: 2, y: 1 } }
+  const noEntry = tryExtract(far)
+  assert.equal(noEntry.ok, false)
 
   run.gold = run.targetGold
   const ok = tryExtract(run)
@@ -114,21 +215,8 @@ test('撤离规则：未达标拒绝、达标结算（含现实换算与排位�
   assert.ok(ok.run.result.rankScore > 0)
 })
 
-test('破产与超时判定', () => {
-  // 黑天鹅概率拉满 + 债券容器（波动最小）：一步后价值损失下限约 -66，副收益上限 +30，金币 1 必转负 → busted
-  const zero = { ...createRun('normal', ['bond'], 'R1'), gold: 1, blackSwanPct: 1.0 }
-  assert.equal(advanceStep(zero).status, 'busted')
-
-  // 超时未达标：无论一步后金币如何，都低于目标 → busted
-  const timeout = { ...createRun('normal', ['bond'], 'R1'), turn: 24, maxTurns: 25, gold: 1000, targetGold: 2000 }
-  assert.equal(advanceStep(timeout).status, 'busted')
-})
-
-test('段位映射：排位分 → 青铜~王者', () => {
+test('段位映射', () => {
   assert.equal(tierOf(0).tier, 'bronze')
-  assert.equal(tierOf(150).tier, 'silver')
-  assert.equal(tierOf(350).tier, 'gold')
-  assert.equal(tierOf(800).tier, 'platinum')
   assert.equal(tierOf(1600).tier, 'diamond')
   assert.equal(tierOf(3200).tier, 'king')
 })

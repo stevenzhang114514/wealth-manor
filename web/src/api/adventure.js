@@ -11,8 +11,8 @@ export const getAdventureSectors = () => http.get('/adventure/sectors')
 export const startAdventureRun = (difficultyId, containers, riskLevel) =>
   http.post('/adventure/run', { difficultyId, containers, riskLevel })
 
-export const adventureStep = (runId, containerId) =>
-  http.post(`/adventure/run/${runId}/step`, { containerId })
+export const adventureStep = (runId, action) =>
+  http.post(`/adventure/run/${runId}/step`, { action })
 
 export const adventureExtract = (runId) => http.post(`/adventure/run/${runId}/extract`)
 

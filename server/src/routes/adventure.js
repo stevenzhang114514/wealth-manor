@@ -43,23 +43,27 @@ router.post('/run', async (req, res) => {
   ok(res, run, '摸金局开始，祝好运！')
 })
 
-/** 开箱一步：body = { containerId }（可选，不传用当前容器） */
+/** 地牢行动：body = { action: { move|open|choice|containerId } } */
 router.post('/run/:id/step', async (req, res) => {
-  const run = provider.advanceRun(req.params.id, req.body ?? {})
+  const nowMs = Date.now()
+  const run = provider.advanceRun(req.params.id, req.body ?? {}, nowMs)
   if (!run) {
     return fail(res, ERROR_CODES.NOT_FOUND, '局不存在或已结束', 404)
   }
-  ok(res, run, run.status === 'playing' ? '继续摸金' : '本局已结束')
+  ok(res, run, run.status === 'playing' ? '行动完成' : '本局已结束')
 })
 
-/** 撤离结算：达标才可撤离，成功后金币入庄园、累计排位分 */
+/** 撤离结算：须在入口房间且达标，成功后金币入庄园、累计排位分 */
 router.post('/run/:id/extract', async (req, res) => {
-  const result = provider.extractRun(req.params.id)
+  const result = provider.extractRun(req.params.id, Date.now())
   if (!result) {
     return fail(res, ERROR_CODES.NOT_FOUND, '局不存在或已结束', 404)
   }
+  if (result.timeout) {
+    return ok(res, result.run, '时间耗尽，未能撤离')
+  }
   if (result.error) {
-    return fail(res, ERROR_CODES.CONFLICT, '未达目标金额，还不能撤离', 409)
+    return fail(res, ERROR_CODES.CONFLICT, '未达目标金额或不在入口房间，还不能撤离', 409)
   }
   // 收益入庄园金币（100金币=1元 换算展示），用于装饰/家具消费
   const manor = manorProvider.applyRewards({ coins: result.run.result.profit })

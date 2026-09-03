@@ -28,32 +28,36 @@ const OUT_DIR = path.resolve(__dirname, '../screenshots')
 mkdirSync(OUT_DIR, { recursive: true })
 
 // skip_login：跳过登录守卫（截图不依赖 localStorage）
+// adventure：横屏画布（844×390）；其余竖屏
 const ROUTES = [
-  { name: 'login', path: '/login' },
-  { name: 'adventure', path: '/adventure?skip_login=1&demo_risk=R3&no_auto=1' },
-  { name: 'simulator', path: '/simulator?skip_login=1&demo_risk=R3' },
-  { name: 'risk', path: '/risk?skip_login=1' },
-  { name: 'manor', path: '/manor?skip_onboard=1&skip_login=1' },
-  { name: 'assets', path: '/assets?skip_login=1' },
-  { name: 'tasks', path: '/tasks?skip_login=1' },
-  { name: 'quiz', path: '/quiz?skip_login=1' },
-  { name: 'profile', path: '/profile?skip_login=1' },
-  { name: 'shop', path: '/shop?skip_login=1' },
-  { name: 'social', path: '/social?skip_login=1' },
-  { name: 'chat', path: '/chat?skip_login=1' },
+  { name: 'login', path: '/login', sizes: ['phone', 'pad'] },
+  { name: 'adventure-lobby', path: '/adventure?skip_login=1&demo_risk=R3&no_auto=1', sizes: ['phone', 'pad'] },
+  { name: 'adventure', path: '/adventure?skip_login=1&demo_risk=R3&pause_timer=1', sizes: ['landscape'] },
+  { name: 'simulator', path: '/simulator?skip_login=1&demo_risk=R3', sizes: ['phone', 'pad'] },
+  { name: 'risk', path: '/risk?skip_login=1', sizes: ['phone', 'pad'] },
+  { name: 'manor', path: '/manor?skip_onboard=1&skip_login=1', sizes: ['phone', 'pad'] },
+  { name: 'assets', path: '/assets?skip_login=1', sizes: ['phone', 'pad'] },
+  { name: 'tasks', path: '/tasks?skip_login=1', sizes: ['phone', 'pad'] },
+  { name: 'quiz', path: '/quiz?skip_login=1', sizes: ['phone', 'pad'] },
+  { name: 'profile', path: '/profile?skip_login=1', sizes: ['phone', 'pad'] },
+  { name: 'shop', path: '/shop?skip_login=1', sizes: ['phone', 'pad'] },
+  { name: 'social', path: '/social?skip_login=1', sizes: ['phone', 'pad'] },
+  { name: 'chat', path: '/chat?skip_login=1', sizes: ['phone', 'pad'] },
 ]
 
-const SIZES = [
-  { label: 'phone', w: 375, h: 812 },
-  { label: 'pad', w: 768, h: 1024 },
-]
+const SIZES = {
+  phone: { w: 375, h: 812 },
+  pad: { w: 768, h: 1024 },
+  landscape: { w: 844, h: 390 },
+}
 
 for (const r of ROUTES) {
-  for (const s of SIZES) {
+  for (const sKey of r.sizes) {
+    const s = SIZES[sKey]
     const sep = r.path.includes('?') ? '&' : '?'
     const url = `http://localhost:5173${r.path}${sep}embed=1`
-    const out = path.join(OUT_DIR, `${r.name}-${s.label}.png`)
-    console.log(`截图 ${r.name}-${s.label}: ${url}`)
+    const out = path.join(OUT_DIR, `${r.name}-${sKey}.png`)
+    console.log(`截图 ${r.name}-${sKey}: ${url}`)
     execFileSync(
       chrome,
       [
