@@ -36,7 +36,7 @@ export function extractRun(id, nowMs = Date.now()) {
   const run = runs.get(id)
   if (!run) return null
   // 超时校验：超时后不可撤离
-  const elapsed = (nowMs - run.startedAt) / 1000
+  const elapsed = (nowMs - run.startedAt) / 1000 + (run.timePenalty ?? 0)
   if (elapsed > run.timeLimit) {
     const busted = { ...run, status: 'busted', result: { reason: 'timeout' } }
     runs.set(id, busted)

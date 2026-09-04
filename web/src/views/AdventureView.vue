@@ -129,7 +129,11 @@ const startTimer = () => {
   }
   const sync = () => {
     if (!run.value) return
-    remainingMs.value = run.value.startedAt + run.value.timeLimit * 1000 - Date.now()
+    remainingMs.value =
+      run.value.startedAt +
+      run.value.timeLimit * 1000 -
+      Date.now() -
+      (run.value.timePenalty ?? 0) * 1000
   }
   sync()
   ticker.value = setInterval(sync, 500)
@@ -144,9 +148,9 @@ const act = async (action) => {
     mode.value = 'result'
     return
   }
-  // 每步后同步计时基准
+  // 每步后同步计时基准（含移动罚时）
   const r = run.value
-  remainingMs.value = r.startedAt + r.timeLimit * 1000 - Date.now()
+  remainingMs.value = r.startedAt + r.timeLimit * 1000 - Date.now() - (r.timePenalty ?? 0) * 1000
   if (remainingMs.value <= 0 && r.status === 'playing') {
     // 触发服务端超时校验
     await adv.step({ idle: true })
@@ -401,7 +405,7 @@ const goManor = () => router.push('/manor')
           <!-- 倒计时 -->
           <div class="timer-box" :class="{ urgent }">
             <span class="timer-num">{{ secondsLeft }}</span>
-            <span class="timer-label">秒 · 限时撤离</span>
+            <span class="timer-label">秒 · 每步移动-0.5s</span>
           </div>
 
           <!-- 金币目标 -->

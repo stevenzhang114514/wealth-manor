@@ -3,7 +3,7 @@
  * 横屏地牢探险：
  *   地牢房间随机生成且连通，每个房间 = 一个板块（经济作物/粮油/金属/油气）
  *   房间内可能有 无/低级/中级/高级 箱子；可能有怪物（=金融风险事件化身）
- *   玩家限时（45~90s 真实倒计时）探索：移动→开箱→遇怪三选博弈→返回入口撤离达标
+ *   玩家限时（80~150s）探索；每移动一步额外扣除 0.5 秒倒计时（路径规划成本）：移动→开箱→遇怪三选博弈→返回入口撤离达标
  * 价值 = 基础值 × 品质倍数 × 箱子档倍 × (1+板块景气度) × 容器波动抽样
  */
 import { DIFFICULTIES, RANKS, GOLD_TO_CNY } from '../data/adventures.js'
@@ -139,6 +139,7 @@ export function createRun(difficultyId, containerIds, riskLevel, startedAt = Dat
     targetGold: diff.startGold * diff.targetMultiple,
     timeLimit: diff.timeLimit,
     startedAt,
+    timePenalty: 0,
     maxTurns: diff.maxTurns,
     rankFactor: diff.rankFactor,
     containers,
@@ -170,7 +171,7 @@ export function advanceStep(runInput, action = {}, nowMs = Date.now()) {
   if (r.status !== 'playing') return r
 
   // 超时校验（真实时间）
-  const elapsed = (nowMs - r.startedAt) / 1000
+  const elapsed = (nowMs - r.startedAt) / 1000 + (r.timePenalty ?? 0)
   if (elapsed > r.timeLimit) {
     r.status = 'busted'
     r.result = { reason: 'timeout' }
@@ -203,6 +204,7 @@ export function advanceStep(runInput, action = {}, nowMs = Date.now()) {
     }
     const next = roomAt(r, nx, ny)
     r.pos = { x: nx, y: ny }
+    r.timePenalty = (r.timePenalty ?? 0) + 0.5 // 每步 -0.5 秒
     if (!r.explored.some((p, i) => i % 2 === 0 && p === nx && r.explored[i + 1] === ny)) {
       r.explored.push(nx, ny)
     }

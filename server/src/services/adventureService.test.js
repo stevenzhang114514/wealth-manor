@@ -193,6 +193,31 @@ test('经济周期：每3次开箱切换（遍历周期序列）', () => {
   assert.ok(seen.size >= 2, `应遍历多个经济周期（${[...seen].join(',')}）`)
 })
 
+test('移动罚时：每移动一步累计 0.5 秒，累计可致超时', () => {
+  const run = makeRun({ diff: 'easy' }) // 150s
+  let cur = run
+  // 真实时间仅过 60s，但移动 181 步罚时 90.5s → 合计 150.5 > 150 超时
+  // 54 房间来回移动 181 步（方向在边界内反弹：走到底再回头）
+  let dir = 'right'
+  for (let i = 0; i < 182 && cur.status === 'playing'; i++) {
+    const nx = cur.pos.x + (dir === 'right' ? 1 : -1)
+    if (nx >= cur.dungeon.width || nx < 0) {
+      dir = dir === 'right' ? 'left' : 'right'
+    }
+    cur = advanceStep(cur, { action: { move: dir } }, NOW + 60 * 1000) // 真实60s+罚时90.5s>150
+  }
+  assert.equal(cur.status, 'busted')
+  assert.equal(cur.result.reason, 'timeout')
+  assert.ok(Math.abs((cur.timePenalty ?? 0) - 90.5) < 0.6, '罚时累计约90.5s')
+})
+
+test('移动罚时：不移动则不影响真实时间判定', () => {
+  const run = makeRun({ diff: 'easy' })
+  // 未移动，过 149s 仍 playing（不超时）
+  const near = advanceStep(run, { action: { open: true } }, NOW + 149 * 1000)
+  assert.equal(near.status, 'playing')
+})
+
 test('超时：超过 timeLimit → busted', () => {
   const run = makeRun({ diff: 'easy' }) // 150s
   const late = advanceStep(run, { action: { move: 'right' } }, NOW + 151 * 1000)
