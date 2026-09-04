@@ -81,11 +81,42 @@ onMounted(async () => {
   sectors.value = sects
 
   const noAuto = new URLSearchParams(location.search).get('no_auto') === '1'
+  // 截图演示：?demo_script=explore|loot|monster 自动行动到目标状态（固定地图 seed 保证可复现）
+  const demoScript = new URLSearchParams(location.search).get('demo_script')
+  if (demoScript) {
+    localStorage.setItem('wm-adventure-started', '1')
+    await begin('easy', ['bond'])
+    await runDemo(demoScript)
+    return
+  }
   if (!noAuto && !localStorage.getItem('wm-adventure-started')) {
     localStorage.setItem('wm-adventure-started', '1')
     autoStartNewbie()
   }
 })
+
+/** 演示脚本：explore=右移2步看地图 / loot=右移1步开高箱 / monster=走到股灾妖房间遇遭遇卡 */
+const runDemo = async (script) => {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+  const steps = {
+    explore: () => [['R'], ['R']],
+    loot: () => [['R'], ['O']],
+    monster: () => [['R'], ['R'], ['R'], ['U'], ['U'], ['U']],
+  }
+  const seq = steps[script]?.() ?? [['R']]
+  for (const [cmd] of seq) {
+    await sleep(650)
+    if (cmd === 'R') await moveTo('right')
+    else if (cmd === 'L') await moveTo('left')
+    else if (cmd === 'U') await moveTo('up')
+    else if (cmd === 'D') await moveTo('down')
+    else if (cmd === 'O') await dig()
+    else if (cmd === 'F') await flee()
+    // 遇怪后停在遭遇卡（不点三选），供截图
+    if (run.value?.awaitPlayer) return
+  }
+  await sleep(800)
+}
 
 onBeforeUnmount(() => clearInterval(ticker.value))
 
