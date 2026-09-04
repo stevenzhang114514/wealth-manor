@@ -137,12 +137,12 @@ const run = async () => {
   r = await get('/adventure/sectors')
   check('板块图鉴 4 个', r.body.data?.length === 4 && r.body.data?.[0]?.items?.length === 4)
   r = await post('/adventure/run', { difficultyId: 'easy', containers: ['stock', 'fund'], riskLevel: 'R3' })
-  check('开局含地牢地图', r.body.data?.gold === 1000 && r.body.data?.dungeon?.rooms?.length === 12)
+  check('开局含地牢地图(54房间/150s)', r.body.data?.gold === 1000 && r.body.data?.dungeon?.rooms?.length === 54 && r.body.data?.timeLimit === 150)
   const rid = r.body.data.id
   r = await post(`/adventure/run/${rid}/extract`)
   check('未达标撤离 409', r.status === 409)
   r = await post(`/adventure/run/${rid}/step`, { action: { move: 'right' } })
-  check('移动进房间', r.body.data?.pos?.x === 1 && r.body.data?.pos?.y === 1)
+  check('移动进房间', r.body.data?.pos?.x === 1 && r.body.data?.pos?.y === 3)
   // 房间可能无箱无怪：open/choice 都应返回正常状态（不崩溃即可）
   r = await post(`/adventure/run/${rid}/step`, { action: { open: true } })
   check('开箱接口容错', r.status === 200 && (r.body.data?.status === 'playing' || r.body.data?.status === 'busted'))

@@ -277,101 +277,98 @@ const goManor = () => router.push('/manor')
       <div class="dungeon-canvas">
         <!-- 左侧：地牢地图 -->
         <div class="map-panel">
-          <svg viewBox="0 0 420 320" class="dungeon-map">
+          <svg viewBox="0 0 930 620" class="dungeon-map">
             <defs>
               <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color="#3a3f4b" />
                 <stop offset="100%" stop-color="#262a33" />
               </linearGradient>
             </defs>
-            <rect width="420" height="320" fill="url(#stone)" rx="14" />
-            <!-- 地图标题 -->
+            <rect width="930" height="620" fill="url(#stone)" rx="14" />
             <text
-              x="210"
-              y="22"
+              x="465"
+              y="24"
               text-anchor="middle"
               fill="#8a8f99"
-              font-size="11"
+              font-size="12"
               font-weight="700"
             >
-              地牢 · 房间=板块 · 随机连通
+              地牢 · 54 房间（9×6） · 每房间=板块 · 随机连通 · 限时探索
             </text>
-            <!-- 房间 -->
+            <!-- 房间（9×6） -->
             <g v-for="room in run.dungeon.rooms" :key="room.id">
               <rect
-                :x="room.x * 100 + 14"
-                :y="room.y * 100 + 36"
-                width="86"
+                :x="room.x * 101 + 12"
+                :y="room.y * 95 + 38"
+                width="91"
                 height="82"
-                rx="10"
+                rx="8"
                 :fill="
-                  isExplored(room) ? (sectorOf(room.sectorId)?.color || '#555') + '33' : '#1c1f26'
+                  isExplored(room) ? (sectorOf(room.sectorId)?.color || '#555') + '2e' : '#1c1f26'
                 "
                 :stroke="
                   run.pos.x === room.x && run.pos.y === room.y
                     ? '#ffd54f'
-                    : room.x === 0 && room.y === 1
+                    : room.x === 0 && room.y === 3
                       ? '#34c759'
                       : '#555b66'
                 "
-                :stroke-width="run.pos.x === room.x && run.pos.y === room.y ? 3 : 1.5"
+                :stroke-width="run.pos.x === room.x && run.pos.y === room.y ? 3 : 1.2"
               />
-              <!-- 探索过的房间内容 -->
               <template v-if="isExplored(room)">
                 <text
-                  :x="room.x * 100 + 57"
-                  :y="room.y * 100 + 62"
+                  :x="room.x * 101 + 57"
+                  :y="room.y * 95 + 66"
                   text-anchor="middle"
-                  font-size="22"
+                  font-size="21"
                 >
                   {{ sectorOf(room.sectorId)?.icon }}
                 </text>
                 <text
-                  :x="room.x * 100 + 57"
-                  :y="room.y * 100 + 108"
+                  :x="room.x * 101 + 57"
+                  :y="room.y * 95 + 109"
                   text-anchor="middle"
                   fill="#cfd4dc"
-                  font-size="9"
+                  font-size="8.5"
                 >
                   {{ sectorOf(room.sectorId)?.name }}
                 </text>
                 <text
                   v-if="room.chest"
-                  :x="room.x * 100 + 86"
-                  :y="room.y * 100 + 100"
+                  :x="room.x * 101 + 86"
+                  :y="room.y * 95 + 102"
                   text-anchor="middle"
-                  font-size="16"
+                  font-size="15"
                 >
                   {{ CHEST_UI[room.chest].emoji }}
                 </text>
                 <text
                   v-if="room.monster"
-                  :x="room.x * 100 + 28"
-                  :y="room.y * 100 + 100"
+                  :x="room.x * 101 + 28"
+                  :y="room.y * 95 + 102"
                   text-anchor="middle"
-                  font-size="18"
+                  font-size="16"
                 >
                   {{ room.monster.icon }}
                 </text>
               </template>
               <text
                 v-else
-                :x="room.x * 100 + 57"
-                :y="room.y * 100 + 80"
+                :x="room.x * 101 + 57"
+                :y="room.y * 95 + 82"
                 text-anchor="middle"
                 fill="#4a4f59"
                 font-size="20"
               >
                 ?
               </text>
-              <!-- 入口标注 -->
               <text
-                v-if="room.x === 0 && room.y === 1"
-                :x="room.x * 100 + 57"
-                :y="room.y * 100 + 118"
+                v-if="room.x === 0 && room.y === 3"
+                :x="room.x * 101 + 57"
+                :y="room.y * 95 + 34"
                 text-anchor="middle"
                 fill="#34c759"
-                font-size="8"
+                font-size="8.5"
               >
                 🚪入口=撤离
               </text>
@@ -379,16 +376,16 @@ const goManor = () => router.push('/manor')
             <!-- 玩家 -->
             <g v-if="run.pos">
               <circle
-                :cx="run.pos.x * 100 + 57"
-                :cy="run.pos.y * 100 + 60"
-                r="17"
+                :cx="run.pos.x * 101 + 57"
+                :cy="run.pos.y * 95 + 62"
+                r="18"
                 fill="#ffd54f"
                 opacity="0.3"
                 class="player-pulse"
               />
               <text
-                :x="run.pos.x * 100 + 57"
-                :y="run.pos.y * 100 + 67"
+                :x="run.pos.x * 101 + 57"
+                :y="run.pos.y * 95 + 68"
                 text-anchor="middle"
                 font-size="20"
               >

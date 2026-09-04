@@ -5,7 +5,7 @@
 export const DIFFICULTIES = [
   {
     id: 'easy',
-    timeLimit: 90, // 秒
+    timeLimit: 150, // 秒
     name: '简单',
     icon: '🌱',
     desc: '新手保护局：前3回合不会遭遇黑天鹅，安心体验摸金节奏',
@@ -19,7 +19,7 @@ export const DIFFICULTIES = [
   },
   {
     id: 'normal',
-    timeLimit: 75, // 秒
+    timeLimit: 120, // 秒
     name: '普通',
     icon: '⚔️',
     desc: '标准摸金局：黑天鹅概率 12%，暴击最高 ×2',
@@ -33,7 +33,7 @@ export const DIFFICULTIES = [
   },
   {
     id: 'hard',
-    timeLimit: 60, // 秒
+    timeLimit: 100, // 秒
     name: '困难',
     icon: '🔥',
     desc: '高波动局：黑天鹅概率 20%，暴击最高 ×2.5，收益与风险并存',
@@ -47,7 +47,7 @@ export const DIFFICULTIES = [
   },
   {
     id: 'nightmare',
-    timeLimit: 45, // 秒
+    timeLimit: 80, // 秒
     name: '噩梦',
     icon: '💀',
     desc: '极限摸金：黑天鹅概率 30%，暴击最高 ×3，一步天堂一步深渊',

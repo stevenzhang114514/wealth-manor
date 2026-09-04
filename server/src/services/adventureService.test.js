@@ -27,10 +27,10 @@ const makeRun = (opts = {}) => createRun(opts.diff ?? 'normal', ['bond'], 'R1', 
 
 test('地牢生成：连通性与结构', () => {
   const d = generateDungeon(7)
-  assert.equal(d.rooms.length, 12)
+  assert.equal(d.rooms.length, 54)
   // BFS 从入口可达全部房间
   const visited = new Set()
-  const queue = [d.byId.get('r_0_1')]
+  const queue = [d.byId.get('r_0_3')]
   visited.add(queue[0].id)
   while (queue.length) {
     const r = queue.shift()
@@ -41,9 +41,9 @@ test('地牢生成：连通性与结构', () => {
       }
     }
   }
-  assert.equal(visited.size, 12, '全房间连通')
+  assert.equal(visited.size, 54, '全房间连通')
   // 入口无箱
-  assert.equal(d.byId.get('r_0_1').chest, null)
+  assert.equal(d.byId.get('r_0_3').chest, null)
   // 房间所属板块合法
   assert.ok(d.rooms.every((r) => SECTORS.some((s) => s.id === r.sectorId)))
 })
@@ -107,16 +107,16 @@ test('容器资格：风评门槛', () => {
 test('创建一局：双容器、入口位置、限时', () => {
   const run = makeRun({ diff: 'easy' })
   assert.equal(run.gold, 1000)
-  assert.equal(run.timeLimit, 90)
+  assert.equal(run.timeLimit, 150)
   assert.deepEqual(run.pos, ENTRY)
-  assert.equal(run.dungeon.rooms.length, 12)
+  assert.equal(run.dungeon.rooms.length, 54)
 })
 
 test('移动：走进新房间、墙壁拦截', () => {
   const run = makeRun()
   // 从 (0,1) 向右
   const right = advanceStep(run, { action: { move: 'right' } }, NOW + 1000)
-  assert.deepEqual(right.pos, { x: 1, y: 1 })
+  assert.deepEqual(right.pos, { x: 1, y: 3 })
   // 向左回入口
   const back = advanceStep(right, { action: { move: 'left' } }, NOW + 2000)
   assert.deepEqual(back.pos, ENTRY)
@@ -128,37 +128,37 @@ test('移动：走进新房间、墙壁拦截', () => {
 test('移动：房间有怪物 → 遭遇等待玩家决策', () => {
   const run = makeRun()
   // 强制把右侧房间放一只怪
-  const room = run.dungeon.rooms.find((r) => r.x === 1 && r.y === 1)
+  const room = run.dungeon.rooms.find((r) => r.x === 1 && r.y === 3)
   room.monster = { ...MONSTERS[0] }
   const next = advanceStep(run, { action: { move: 'right' } }, NOW + 1000)
   assert.equal(next.awaitPlayer?.monster?.id, 'm_crash')
-  assert.equal(next.awaitPlayer?.roomId, 'r_1_1')
+  assert.equal(next.awaitPlayer?.roomId, 'r_1_3')
 })
 
 test('怪物三选：迎战损失在区间、防御固定5%、逃离无损', () => {
   // 直接构造：玩家已在有怪房间
   const run = makeRun()
-  const room = run.dungeon.rooms.find((r) => r.x === 1 && r.y === 1)
-  run.pos = { x: 1, y: 1 }
+  const room = run.dungeon.rooms.find((r) => r.x === 1 && r.y === 3)
+  run.pos = { x: 1, y: 3 }
   room.monster = { ...MONSTERS[0], lossRange: [0.1, 0.1] } // 固定 10%
   const before = run.gold
   const fight = advanceStep(run, { action: { choice: 'fight' } }, NOW + 1000)
   assert.equal(fight.awaitPlayer, null)
-  assert.equal(fight.dungeon.rooms.find((r) => r.x === 1 && r.y === 1).monster, null, '击退')
+  assert.equal(fight.dungeon.rooms.find((r) => r.x === 1 && r.y === 3).monster, null, '击退')
   assert.equal(fight.gold, before - Math.round(before * 0.1), '固定损失10%')
 
   // defend：固定 5%
   const run2 = makeRun({ seed: 99 })
-  const room2 = run2.dungeon.rooms.find((r) => r.x === 1 && r.y === 1)
-  run2.pos = { x: 1, y: 1 }
+  const room2 = run2.dungeon.rooms.find((r) => r.x === 1 && r.y === 3)
+  run2.pos = { x: 1, y: 3 }
   room2.monster = { ...MONSTERS[0] }
   const defend = advanceStep(run2, { action: { choice: 'defend' } }, NOW + 1000)
   assert.equal(defend.gold, run2.gold - Math.round(run2.gold * 0.05))
 
   // flee：无损
   const run3 = makeRun({ seed: 123 })
-  const room3 = run3.dungeon.rooms.find((r) => r.x === 1 && r.y === 1)
-  run3.pos = { x: 1, y: 1 }
+  const room3 = run3.dungeon.rooms.find((r) => r.x === 1 && r.y === 3)
+  run3.pos = { x: 1, y: 3 }
   room3.monster = { ...MONSTERS[0] }
   const flee = advanceStep(run3, { action: { choice: 'flee' } }, NOW + 1000)
   assert.equal(flee.gold, run3.gold, '逃离无损')
@@ -171,7 +171,7 @@ test('开箱：品质/箱子倍率/价值变动正确', () => {
   room.chest = 'high'
   const before = run.gold
   const next = advanceStep(run, { action: { open: true } }, NOW + 1000)
-  assert.equal(next.dungeon.rooms.find((r) => r.x === 0 && r.y === 1).chest, null, '箱子清空')
+  assert.equal(next.dungeon.rooms.find((r) => r.x === 0 && r.y === 3).chest, null, '箱子清空')
   const s = next.lastStep
   assert.ok(s.quality && s.loot && s.chest?.tier === 'high')
   assert.equal(next.gold, before + s.value + s.sideIncome)
@@ -184,7 +184,7 @@ test('经济周期：每3次开箱切换（遍历周期序列）', () => {
   const seen = new Set()
   for (let i = 0; i < 9; i++) {
     // 强制当前房间有箱
-    const entryRoom = cur.dungeon.rooms.find((r) => r.x === 0 && r.y === 1)
+    const entryRoom = cur.dungeon.rooms.find((r) => r.x === 0 && r.y === 3)
     if (!entryRoom.chest) entryRoom.chest = 'mid'
     cur = advanceStep(cur, { action: { open: true } }, NOW + 1000 * (i + 1))
     seen.add(cur.econCycle)
@@ -194,15 +194,15 @@ test('经济周期：每3次开箱切换（遍历周期序列）', () => {
 })
 
 test('超时：超过 timeLimit → busted', () => {
-  const run = makeRun({ diff: 'easy' }) // 90s
-  const late = advanceStep(run, { action: { move: 'right' } }, NOW + 91 * 1000)
+  const run = makeRun({ diff: 'easy' }) // 150s
+  const late = advanceStep(run, { action: { move: 'right' } }, NOW + 151 * 1000)
   assert.equal(late.status, 'busted')
   assert.equal(late.result.reason, 'timeout')
 })
 
 test('撤离：非入口拒绝、入口达标成功', () => {
   const run = makeRun()
-  const far = { ...run, pos: { x: 2, y: 1 } }
+  const far = { ...run, pos: { x: 2, y: 3 } }
   const noEntry = tryExtract(far)
   assert.equal(noEntry.ok, false)
 

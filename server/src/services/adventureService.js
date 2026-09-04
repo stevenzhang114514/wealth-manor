@@ -14,9 +14,9 @@ import { MONSTERS } from '../data/monsters.js'
 import { RISK_RANK } from '../data/products.js'
 import { createSeededRandom } from '../utils/random.js'
 
-export const DUNGEON_W = 4
-export const DUNGEON_H = 3
-export const ENTRY = { x: 0, y: 1 } // 入口 = 撤离点
+export const DUNGEON_W = 9
+export const DUNGEON_H = 6
+export const ENTRY = { x: 0, y: 3 } // 入口 = 撤离点
 
 /** 箱子分布表：无/低/中/高 */
 export const CHEST_TABLE = [
@@ -75,8 +75,8 @@ export function generateDungeon(seed = 20260813) {
   }
 
   // 随机放怪物：放置在 x≥2 的房间（深处，概率 ~60% 放 1~2 只）
-  const deepRooms = rooms.filter((r) => r.x >= 2 && rand() < 0.5)
-  for (const r of deepRooms.slice(0, 1 + Math.floor(rand() * 2))) {
+  const deepRooms = rooms.filter((r) => r.x >= 3 && rand() < 0.55)
+  for (const r of deepRooms.slice(0, 2 + Math.floor(rand() * 3))) {
     r.monster = { ...MONSTERS[Math.floor(rand() * MONSTERS.length)] }
   }
 
